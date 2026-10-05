@@ -62,7 +62,7 @@ For source development, the installer can use `--tool-cache PATH` with local Git
 clones containing the pinned commits. It exports committed files at those pins,
 not mutable working copies. Ordinary installation fetches those commits itself.
 
-The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.18.2. Both pins are on merged public history.
+The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.18.2. The Seed Me pin is on merged public history. The tink-sdlc pin (9172e2d, tink-sdlc PR #43) is an unmerged candidate that fixes the `tink mount --json --payload` guidance; it will be replaced by the merged or released revision.
 This SDLC version supplies text status; the dashboard displays it without
 inventing structured verification or approval.
 Their original licenses remain in the bundled sources. Updating either revision is a
