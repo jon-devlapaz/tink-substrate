@@ -1,0 +1,26 @@
+{
+  "result": "passed",
+  "candidate": {
+    "head": "842bcdcc4ac877adc7d2bca3d2b6863446cea36a",
+    "tree": "b3984b0484d2fb4940cb010f4d7d45a7724604efb41605b73716d1a36f06fe39"
+  },
+  "inputs": "86fab9003ec4e434402b3cd12798f91d9cb7678ec0a14ae4e3084f4b2d19a318",
+  "policy": "5d5970adf2a2653038dc1256dbbb8be2ca816ec5af99f2c70ea227ed9c1ea4e2",
+  "test_lock": null,
+  "checklist": "a3e382af55b00658ad36c3f0cd2d5037cdc3ea29593d171cb2521ae00ba30cc2",
+  "manual_marks": {
+    "real-stage-open-reason": "06c64f175589904aaeb96e4eaeb4a9b2d196a01877d690bdbc88691a39f2398e",
+    "installer-roundtrip": "04e68f414b5f3863dac4c5adf09a37eb3028fda82a9eb295258ff804f18f1b33"
+  },
+  "checklist_items": {
+    "pin-f730e13": "proven",
+    "docs-current-pin": "proven",
+    "receipt-1-18-4": "proven",
+    "sdlc-py-matches-pin": "proven",
+    "scope-unchanged": "proven",
+    "walk-7-of-7": "proven",
+    "real-stage-open-reason": "attested",
+    "installer-roundtrip": "attested"
+  },
+  "log": "23b8dda525260b7448364672c03c7634fb8143ec45435ee5e6fa2be0c9705d40"
+}

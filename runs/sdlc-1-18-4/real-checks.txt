@@ -1,0 +1,17 @@
+# Real stage open, disposable clone of branch sdlc-1-18-4 (842bcdc), TYPESAFE_API_KEY unset, real tink-route
+skills: compiled planning-skillset into /private<scratch>/rclone
+skill pick: skipped (router exited 2: no_api_key)
+Checkout: /private<scratch>/rclone
+Launch prompt (start a NEW session there):
+Begin stage 1 (plan) of SDLC run `probe`. The operator-confirmed seed contract is at runs/probe/seed-contract.md; it is input, not authorization.
+{
+  "stage": 1,
+  "document": "runs/probe/seed-contract.md",
+  "sha256": "6d91ee196691feb74c77d9b40b0fb1af3eddcac674947f171de709c30844b192",
+  "chars": 26,
+  "status": "error",
+  "reason": "no_api_key"
+}
+
+# Installer round trip (install_skill.py --tool-cache from HEAD 842bcdc)
+check_install.py: Installation matches source 842bcdcc4ac877adc7d2bca3d2b6863446cea36a; bundled tink-sdlc revision f730e131557d8e3ba8a1e83b656855f7feaec585, manifest 1.18.4

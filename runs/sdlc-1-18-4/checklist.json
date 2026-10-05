@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "pin-f730e13",
+      "description": "install_skill.py pins tink-sdlc at f730e13 and leaves tink-skills unchanged",
+      "verify": "PINS['tink-sdlc'][1] equals the full f730e13 sha; PINS['tink-skills'][1] is still 58878b5",
+      "check": {
+        "argv": ["python3", "-B", "-c", "import sys; sys.path.insert(0,'.'); from scripts.install_skill import PINS; assert PINS['tink-sdlc'][1]=='f730e131557d8e3ba8a1e83b656855f7feaec585', PINS; assert PINS['tink-skills'][1]=='58878b5794ca04a5ec0ba62027faadabfe7ca925', PINS"],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "docs-current-pin",
+      "description": "Docs name 1.18.4 as the current pin and no longer claim 1.18.3 as current; the validation doc still names the 1.18.2 pin it actually exercised",
+      "verify": "start-a-change.md has no '1.18.3' and has '1.18.4'; new-user-validation.md has no 'current SDLC pin is 1.18.3', mentions f730e13 and still mentions 328a230",
+      "check": {
+        "argv": ["python3", "-B", "-c", "from pathlib import Path; a=Path('docs/start-a-change.md').read_text(); b=Path('docs/new-user-validation.md').read_text(); assert '1.18.3' not in a and '1.18.4' in a; assert 'current SDLC pin is 1.18.3' not in b and 'f730e13' in b and '328a230' in b"],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "receipt-1-18-4",
+      "description": "Workspace receipt reports 1.18.4",
+      "verify": "_system/scaffold.json version is 1.18.4",
+      "check": {
+        "argv": ["python3", "-B", "-c", "import json; v=json.load(open('_system/scaffold.json'))['version']; assert v=='1.18.4', v"],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "sdlc-py-matches-pin",
+      "description": "_system/scripts/sdlc.py is byte-identical to assets/_system/scripts/sdlc.py at f730e13 (needs the local tink-sdlc clone)",
+      "verify": "git show f730e13:assets/_system/scripts/sdlc.py in /Users/jondev/dev/active/factory/tink-sdlc equals the workspace file",
+      "check": {
+        "argv": ["python3", "-B", "-c", "import subprocess; d=subprocess.check_output(['git','-C','/Users/jondev/dev/active/factory/tink-sdlc','show','f730e131557d8e3ba8a1e83b656855f7feaec585:assets/_system/scripts/sdlc.py']); assert d==open('_system/scripts/sdlc.py','rb').read()"],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "scope-unchanged",
+      "description": "Only the intended files differ from origin/main; verification.json, stage contracts, tests and other runs are untouched",
+      "verify": "git diff --name-only origin/main lists only install_skill.py, the two docs, _system/scaffold.json, _system/scripts/sdlc.py, generated AGENTS.md, and runs/sdlc-1-18-4/",
+      "check": {
+        "argv": ["python3", "-B", "-c", "import subprocess; out=subprocess.check_output(['git','diff','--name-only','origin/main'],text=True).split(); ok={'scripts/install_skill.py','docs/start-a-change.md','docs/new-user-validation.md','_system/scaffold.json','_system/scripts/sdlc.py','AGENTS.md'}; bad=[p for p in out if p not in ok and not p.startswith('runs/sdlc-1-18-4/')]; assert not bad, bad"],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "walk-7-of-7",
+      "description": "Walk lint passes (7 of 7 checks)",
+      "verify": "sdlc.py walk exits 0 with no failed check",
+      "check": {
+        "argv": ["python3", "_system/scripts/sdlc.py", "walk"],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "real-stage-open-reason",
+      "description": "Real stage open from a disposable clone of the branch with real tink-route and TYPESAFE_API_KEY unset prints 'skill pick: skipped (router exited 2: no_api_key)' and the pick receipt contains reason",
+      "verify": "Attested: run in a disposable clone, quote the printed line and the receipt's reason field as evidence"
+    },
+    {
+      "id": "installer-roundtrip",
+      "description": "install_skill.py from the branch installs into a temp dir (using --tool-cache clones at the pins) and that copy's scripts/check_install.py passes",
+      "verify": "Attested: quote the 'Installation matches source ...' line and the bundled tink-sdlc revision f730e13"
+    }
+  ]
+}
