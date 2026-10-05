@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tink-substrate"
+version = "0.1.0"
+description = "A shared local view of software work for people and agents"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.scripts]
+tink-substrate = "tink_substrate.__main__:main"
+
+[tool.setuptools.package-data]
+tink_substrate = ["web/*"]
+
+[tool.setuptools.packages.find]
+include = ["tink_substrate*"]
+namespaces = false

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tink substrate · Work view</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/" aria-label="Tink substrate home"><span class="mark" aria-hidden="true">t.</span> tink substrate</a><span class="scope">One selected work item</span><a class="agent-link" href="/api/snapshot" target="_blank" rel="noopener">Agent snapshot ↗</a></header>
+<main>
+<div class="toolbar"><span></span><div><span id="age">Not checked yet</span><button id="refresh">Refresh sources</button></div></div>
+<div id="notice" role="status" aria-live="polite">Reading your selected project…</div>
+<div id="content" hidden>
+<section class="intro"><div><p id="project" class="eyebrow"></p><h1 id="title"></h1><p id="purpose" class="purpose"></p></div><div class="record-tag">SAVED INTENT<span>From your work record</span></div></section>
+<div class="layout">
+<div class="main-column">
+<section class="panel"><div class="section-head"><h2>Where the work stands</h2><span>Observed sources</span></div><div id="facts" class="facts"></div></section>
+<section class="panel"><div class="section-head"><h2>Artifacts</h2><span>By SDLC stage</span></div><div id="artifacts"></div></section>
+<section class="panel"><div class="section-head"><h2>Branches & worktrees</h2><span id="tree-count"></span></div><div id="worktrees"></div><details><summary>All local branches</summary><div id="branches"></div><p class="quiet">Upstream comparisons use locally fetched Git references. Refresh does not fetch or change repositories.</p></details></section>
+<section class="panel"><div class="section-head"><h2>Evidence</h2></div><div id="evidence"></div><div id="decisions"></div><div class="evidence-foot" id="candidate"></div></section>
+
+<section class="panel" id="questions-panel"><h2>Open questions</h2><ul id="questions"></ul></section>
+</div>
+<aside>
+<section class="next-card"><p class="eyebrow">NEXT STEP</p><h2 id="next"></h2><p class="owner">Owner <strong id="owner"></strong></p><span class="saved-note">Saved in the work record</span></section>
+<section class="panel"><div class="section-head"><h2>Needs attention</h2><span id="attention-count"></span></div><ul id="attention"></ul></section>
+
+<section class="source-note"><p>Agents read this same snapshot:</p><code>python3 -m tink_substrate status --url <span id="origin"></span></code><p id="record-path" class="path"></p></section>
+</aside>
+</div>
+<footer id="limits"></footer>
+</div>
+</main>
+</body></html>
