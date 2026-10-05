@@ -22,3 +22,11 @@ jobs:
       - name: Check installed command outside the source tree
         working-directory: ${{ runner.temp }}
         run: tink-substrate --help
+      - name: Install an independent skill package
+        run: python scripts/install_skill.py --destination "${{ runner.temp }}/substrate-skill"
+      - name: Check copied package outside the source tree
+        working-directory: ${{ runner.temp }}/substrate-skill
+        run: |
+          python -m tink_substrate --help
+          mkdir -p "${{ runner.temp }}/trial-target"
+          python .substrate-tools/tink-sdlc/scripts/init.py "${{ runner.temp }}/trial-target" --check
