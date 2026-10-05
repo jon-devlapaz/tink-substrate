@@ -21,8 +21,8 @@ not a background service or a replacement for the target repo's SDLC contracts.
    python3 -m tink_substrate archive --checkout /absolute/path/to/checkout --project repo-name --run run-name --phase delivery
    ```
 
-5. Confirm the command succeeds; link its returned path and the retro in the work
-   record or handoff. Update the dashboard's next action. Report delivery separately
+5. Confirm the command succeeds; link its returned path and the retro in the external work
+   record, so the archived checkout remains clean. Update the dashboard's next action. Report delivery separately
    from human acceptance or merge. If archiving fails, retain the files and report
    the failure; do not claim the run was saved independently.
 

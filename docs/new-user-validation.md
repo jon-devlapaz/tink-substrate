@@ -26,6 +26,15 @@ The new-user instructions were corrected where fresh-session use exposed missing
 scaffold commits, missing request handoffs, work-record placement and ambiguous
 paths. Those changes used existing artifacts rather than adding a lifecycle.
 
+## Entry skill trial
+
+A fresh agent followed the entry skill on a disposable Python project through tool
+setup, an isolated checkout, real test configuration, planning and a working
+dashboard endpoint. A separate planner wrote the brief and checklist. The trial
+stopped at human acceptance, without implementing the proposed change. It used
+this machine's existing Tink library and permissions. Two Tink instruction mismatches
+required agent recovery. See [the retrospective](../runs/entry-skill/retro.md).
+
 ## What is not established
 
 The basic path has not delivered a complete user change through PR review and
@@ -33,8 +42,8 @@ closure. A Seed Me interview and the full Codex Desktop handoff still require a
 real user trial. The historical skill-equipped trials do not prove equivalent
 outcomes with optional skills absent.
 
-The first GitHub clone and remote CI are pending publication. CI is configured for
-Python 3.11 on Linux and 3.14 on macOS; configured jobs are not passing results.
+The public GitHub clone succeeded after publication. The initial GitHub CI run
+passed on Python 3.11 on Linux and 3.14 on macOS.
 Host permissions may require access to chosen paths and the network. No claim is
 made for unattended operation, all repositories or all agent hosts.
 
@@ -46,13 +55,14 @@ private-project references, historical approvals and the original Git ancestry a
 excluded. Original history and review evidence are retained privately.
 
 A native Claude publication review covered the original candidate and reachable
-history. This cleaned candidate requires its own content check before pushing.
+history. A separate native Claude Opus 5.5 review of the cleaned candidate found no
+publication blockers before the initial push.
 The package license applies to this repository. Workflow dependencies are obtained
 separately from their public repositories and retain their own source and terms.
 
 ## Next proof
 
-After publication, follow the actual GitHub README in a fresh session, complete a
+Follow the actual GitHub README in a fresh session, complete a
 bounded change with real approvals, resume once after interruption, and save its
 reviewed PR and retrospective. Record each intervention. Change the system only
 where that run demonstrates a need.

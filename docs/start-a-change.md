@@ -14,18 +14,16 @@ require access to the selected checkouts, evidence directories and network; reco
 actual prompts rather than assuming the author's permissions. Other agent hosts and
 Linux are outside the first user trial.
 
-The approved publication target is `https://github.com/jon-devlapaz/tink-substrate`
-under MIT. After the first push, obtain it with:
+The public repository is `https://github.com/jon-devlapaz/tink-substrate`
+under MIT. Obtain it with:
 
 ```sh
 git clone https://github.com/jon-devlapaz/tink-substrate.git
 cd tink-substrate
 ```
 
-This public clone path and remote CI still need validation. Before publication,
-a local evaluation can use `git clone /absolute/path/to/reviewed-substrate
-/path/to/new-copy` on one command line. A file-only copy lacks the Git history.
-The two workflow sources below are already public.
+The public clone and initial GitHub checks have passed. The two workflow sources
+below are also public.
 
 For this first path, use macOS with Python 3.11+, Git, and Bash.
 The underlying runtime also supports Linux, but that is outside this user trial. Git needs your commit identity.
@@ -142,7 +140,8 @@ an explicit setup commit on that branch. Include it in the eventual PR; it does
 not approve the feature. Stage exact paths, preserving unrelated files. The
 launcher is not a substitute for this commit. Runtime lock files such as
 `runs/.<run>.lock` and `runs/<run>/.writer-lock` are not evidence: exclude those
-exact runtime paths from tracking; do not ignore all run artifacts.
+exact runtime paths using the checkout's local Git exclude file
+(`git rev-parse --git-path info/exclude`); untracked files also block archiving; do not ignore all run artifacts.
 
 From the target checkout, read `_system/SDLC.md` and `stages/01-plan/CONTEXT.md`.
 Inspect status before creating a run. A small change normally fits the light
@@ -202,7 +201,7 @@ handoff = "runs/example-change/handoff.md"
 +++
 ```
 
-For the dashboard, copy the confirmed seed contract from its external session
+If a confirmed seed exists, copy it for the dashboard from its external session
 into `runs/<run>/seed-contract.md` in the target checkout, without rewriting its
 content or confirmation details. Keep the original session. Dashboard artifact
 paths are relative to the target checkout and cannot point outside it.
@@ -225,7 +224,7 @@ retrospective and independent archive at delivery, then record later feedback an
 merge separately. The agent owns these steps during the run. The dashboard does
 not watch GitHub or trigger them in the background.
 
-## Use it on an existing repo
+## Use it without the entry skill
 
 Give your agent the absolute path to this checkout and this request:
 
@@ -255,7 +254,7 @@ GitHub authentication and project build tools remain external requirements.
 - **Interrupted agent:** read the saved work record, target instructions, brief,
   handoff and current `sdlc.py status <run>`. Check the checkout and PR revisions.
   Resume the existing run; never recreate approval from remembered conversation.
-- **Older SDLC:** text status is expected on 1.18.2. The dashboard labels it; use
+- **Pinned SDLC:** text status is expected on 1.18.2. The dashboard labels it; use
   the installed status command for its decisions. Do not upgrade just for a badge.
 - **Tink present but empty:** planning stops with `Skill ... not found in library`
   and `stage not opened`. Review the installed stage's skillset pin and use the
