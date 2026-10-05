@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "version-behavior",
+      "description": "Add the global version option with one package version source and verify source and installed command behavior.",
+      "verify": "tests/test_version.py must cover exact output, exit status, stderr, source and installed module entry points, the generated installed console command outside the source checkout, agreement with installed metadata, differing external metadata during source execution, missing/malformed config with no writes, help visibility, and the existing missing-subcommand error.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-c",
+          "import unittest; s=unittest.defaultTestLoader.discover('tests', pattern='test_version.py'); assert s.countTestCases() > 0, 'No version tests discovered'; r=unittest.TextTestRunner(verbosity=2).run(s); raise SystemExit(not r.wasSuccessful())"
+        ],
+        "timeout_seconds": 180
+      }
+    },
+    {
+      "id": "version-documentation",
+      "description": "Document both version command forms in the README.",
+      "verify": "Review the README against observed console and module output. Record the changed lines and command evidence with sdlc.py mark after approval. Confirm the documented version matches the unchanged 0.1.0 package version."
+    }
+  ]
+}
