@@ -1,0 +1,7 @@
+{
+  "item": "installer-roundtrip",
+  "result": "passed",
+  "evidence": "runs/sdlc-1-18-4/real-checks.txt (install_skill.py --tool-cache from 842bcdc; check_install.py matches; bundles f730e13 / 1.18.4)",
+  "candidate": "b3984b0484d2fb4940cb010f4d7d45a7724604efb41605b73716d1a36f06fe39",
+  "time_ns": 1791215339918772000
+}
