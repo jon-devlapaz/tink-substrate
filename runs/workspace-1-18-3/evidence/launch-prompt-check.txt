@@ -1,0 +1,26 @@
+# Launch-prompt check (disposable clone of origin/main + the 5 upgraded files)
+Stub tink-route on PATH returned {status: routed, winner: unslop}. Interpreter called by absolute path because the pyenv shim puts its own tink-route first.
+
+## sdlc.py stage probe2 1 --here output
+skills: compiled planning-skillset into /private/tmp/claude-501/-Users-jondev-dev-active/6567c2c4-5c6a-4e94-bfbc-e9f29da7201f/scratchpad/launch
+warning: tink-route 0.9 is older than 0.10.0 and may not support whole-library routing; upgrade: pipx install --force git+https://github.com/jon-devlapaz/tink-route.git
+Checkout: /private/tmp/claude-501/-Users-jondev-dev-active/6567c2c4-5c6a-4e94-bfbc-e9f29da7201f/scratchpad/launch
+Launch prompt (start a NEW session there):
+Begin stage 1 (plan) of SDLC run `probe2`. The operator-confirmed seed contract is at runs/probe2/seed-contract.md; it is input, not authorization. Stage-open skill pick: unslop (confidence 0.9); read it before relying on it: tink mount unslop --json --payload.
+
+## pick receipt
+{
+  "stage": 1,
+  "document": "runs/probe2/seed-contract.md",
+  "sha256": "8f82f4033c1f6c446c9c330b09f5b0de9cf0264a7505cee22897ea3426e19ce2",
+  "chars": 41,
+  "status": "routed",
+  "winner": "unslop",
+  "confidence": 0.9
+}
+
+## Printed command run with real tink 1.0.50
+$ tink mount unslop --json --payload  -> exit 0, mounted=false, payload.content 6091 chars
+
+## SDLC.md in clone
+read it with `tink mount <skill> --json --payload`

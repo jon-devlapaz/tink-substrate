@@ -1,0 +1,7 @@
+{
+  "item": "upgrade-scope",
+  "result": "passed",
+  "evidence": "runs/workspace-1-18-3/evidence/upgrade-scope.txt, upgrade-output.txt",
+  "candidate": "1103fb15378ab5cde66590a8ce3b9ddd7ac43e3be1c2bfa2c052169c4ccf2942",
+  "time_ns": 1791212136937556000
+}

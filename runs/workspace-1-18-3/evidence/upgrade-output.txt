@@ -1,0 +1,4 @@
+Upgrade 1.18.2 -> 1.18.3
+Update: _system/SDLC.md, _system/scripts/sdlc.py, stages/04-test/CONTEXT.md
+In-flight runs: approvals will read as stale until re-approved: skill-read-guidance, version-option, workspace-1-18-3 (stage docs/templates changed)
+Upgraded to 1.18.3. Verify with: python3 _system/scripts/sdlc.py walk
