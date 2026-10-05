@@ -1,16 +1,16 @@
 {
   "result": "passed",
   "candidate": {
-    "head": "e73efaf790a91edf08df1cf6cc60b81cbe8e09c8",
-    "tree": "0c166c5f7c4146c897f74bdbb2fd2e0e07265dcdab669219eaa952df145ac59e"
+    "head": "dc88a7f4a566663eb3e15939e381fd2a874005a7",
+    "tree": "6f8eaa7e904d5e708e245b9e0556f99ba252cbe0e5143b31eb590df4cefc9a23"
   },
-  "inputs": "dc13a2d239020be76545d8606fb7aa16b1b29faa1c8e0b59c212f67a20ac9c5d",
+  "inputs": "7c1e9285377f846b5a1d91d168af1d6df304d035cfcb792f858b948991774cc4",
   "policy": "5d5970adf2a2653038dc1256dbbb8be2ca816ec5af99f2c70ea227ed9c1ea4e2",
   "test_lock": "f6c38539dd09b44bbd92eec8e12f9a8daefd12573f82198d585c220150988ee1",
-  "checklist": "fa7ba2ce757f770e4ec56a5a9093cdf69847ceb7d2e65ce4437143adaa964a9e",
+  "checklist": "fd3a0b3099004d19016630a0d1b3f82b09f2ee05fe0e2223a851ce0f1d967b4f",
   "manual_marks": {
-    "docs-pin-wording": "9f88e45761185f65d9ab0f124d9cfbd8d081c071ef045ea66ebfa6c8612f2472",
-    "fresh-agent-trial": "f13ea3b768d2b3f355414e400e0f3ab9b2eb4241db7533a347b2a4c488b418c9"
+    "docs-pin-wording": "b013b6453f3113823e95fc9a893471424d7e234e67da2201a9fe44e6a5ef8cc7",
+    "fresh-agent-trial": "7a810a14aec864ef95dd0ec0075dbbcc0e06135a238b52bdb67ccbaa0797b1fd"
   },
   "checklist_items": {
     "pin-candidate": "proven",
@@ -19,5 +19,5 @@
     "full-suite": "proven",
     "fresh-agent-trial": "attested"
   },
-  "log": "c0635463c7419a24a84dde6891a34f1c961facce3bcb15734c081a08b3443d56"
+  "log": "50add4003055107da11715340f15c7c477045e9034e7d0cd50a477c88a82f799"
 }

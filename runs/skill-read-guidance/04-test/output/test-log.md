@@ -11,7 +11,7 @@ test_light_review_keeps_brief_and_checklist_together (test_artifacts.ArtifactTes
 test_unsafe_large_and_missing_linked_documents_are_visible_errors (test_artifacts.ArtifactTests.test_unsafe_large_and_missing_linked_documents_are_visible_errors) ... ok
 test_saved_selection_explains_restart_and_preserves_config_path (test_cli.SelectionTests.test_saved_selection_explains_restart_and_preserves_config_path) ... ok
 test_existing_symlink_is_not_followed (test_install_skill.InstallSkillTests.test_existing_symlink_is_not_followed) ... ok
-test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmp0xui3xeu/missing': No such file or directory
+test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmp2iw80qn0/missing': No such file or directory
 ok
 test_independent_copy_and_repeat_preserves_destination (test_install_skill.InstallSkillTests.test_independent_copy_and_repeat_preserves_destination) ... ok
 test_empty_or_failed_text_stays_unavailable (test_legacy_status.LegacyStatusTests.test_empty_or_failed_text_stays_unavailable) ... ok
@@ -52,12 +52,12 @@ test_source_version_without_config_or_subcommand (test_version.VersionTests.test
 test_version_exits_before_reading_config_or_running_commands (test_version.VersionTests.test_version_exits_before_reading_config_or_running_commands) ... ok
 
 ----------------------------------------------------------------------
-Ran 49 tests in 10.917s
+Ran 49 tests in 9.538s
 
 OK
 
 # checklist item pin-candidate
-$ ["python3", "-B", "-c", "import re,sys; s=open('scripts/install_skill.py').read(); assert '9172e2dce2fd2c32e69bf9b60e2c03c3bf779ebb' in s and '328a2304b9af703dd846666757d6ffd1166df470' not in s and '58878b5794ca04a5ec0ba62027faadabfe7ca925' in s and re.search(r'(?i)candidate', s)"]
+$ ["python3", "-B", "-c", "s=open('scripts/install_skill.py').read(); assert '3b175bbc8924a52512e7c12b29a4770e4f579267' in s and '9172e2dce2fd2c32e69bf9b60e2c03c3bf779ebb' not in s and '328a2304b9af703dd846666757d6ffd1166df470' not in s and '58878b5794ca04a5ec0ba62027faadabfe7ca925' in s"]
 
 # checklist item repro-test
 $ ["python3", "-B", "-m", "unittest", "-v", "tests.test_skill_read_guidance"]
@@ -68,15 +68,15 @@ test_flags_payload_without_json (tests.test_skill_read_guidance.ScannerTests.tes
 test_ignores_plain_mount (tests.test_skill_read_guidance.ScannerTests.test_ignores_plain_mount) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 1.173s
+Ran 5 tests in 1.168s
 
 OK
 
 # checklist item full-suite
 $ ["python3", "-B", "-m", "unittest", "discover", "-s", "tests"]
-...........fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmph2qxyhdq/missing': No such file or directory
+...........fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmp24cphwpj/missing': No such file or directory
 ......................................
 ----------------------------------------------------------------------
-Ran 49 tests in 10.845s
+Ran 49 tests in 8.524s
 
 OK
