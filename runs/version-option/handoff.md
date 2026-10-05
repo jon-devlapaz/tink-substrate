@@ -75,3 +75,65 @@ Independent review, PR creation, release approval, and the delivery retrospectiv
 and archive remain with the coordinator. This build session did not create a PR,
 merge, or record any approval. Verification is local on macOS/Python 3.14.7; it
 is not remote CI or proof of other Python/platform combinations.
+
+
+## Installation-first CI repair
+
+Repair agent `/root/user_experience_trial/repair_version` resumed stages 3 and 4
+from `6b77d0e`. The coordinator could not resume the original builder because the
+agent tool returned `agent thread limit reached`; this replacement session was
+the orchestration workaround. No product decision or new approval was requested.
+The existing stage 3 approval was current. The brief, checklist and approval
+receipt remain byte-for-byte unchanged from that starting revision.
+
+PR 2 CI run https://github.com/jon-devlapaz/tink-substrate/actions/runs/37259478228
+failed the conflicting-metadata test. `gh run view 37259478228 --log-failed`
+showed the Ubuntu 3.11 failure. The coordinator reported the same macOS 3.14
+failure. The independent review reproduced it and identified the cause in
+`/Users/jondev/dev/active/factory/working-copies/tink-substrate-version-review/runs/version-option/05-deploy/output/REVIEW-findings.md`.
+That review checkout was read only throughout this repair.
+
+The repair reproduced the failure in a temporary source copy and venv on local
+macOS/Python 3.14.7. Copy `pyproject.toml`, `LICENSE`, `tests/` and
+`tink_substrate/` into a temporary directory, create a venv, then run its Python
+with `-m pip install --disable-pip-version-check --no-deps .` from that copied
+source. Next run `-B -m unittest discover -s tests -p test_version.py -v` there.
+Installation succeeded. Five tests passed and one failed in 4.134 seconds.
+The probe returned `0.1.0` where the fixture required `99.0.0`. Full output is
+`04-test/output/installation-first-before.txt`.
+
+Setuptools leaves `tink_substrate.egg-info` in the build source. The original
+probe ran with that source as its current directory, which Python searches before
+PYTHONPATH, so the generated metadata hid the fake external version. This was a
+test setup failure; no runtime version change was needed.
+
+Candidate `b0d4a5ecf323c1251d49066d386c85683aff9d0e` changes only
+`tests/test_version.py`. The metadata probe and source module command now run
+from the temporary fixture directory. PYTHONPATH contains that directory first
+and the actual source checkout second. This keeps conflicting metadata ahead of
+build metadata while still importing the source package. Both original output
+assertions remain, and the probe now also checks exit code zero.
+
+After copying the repaired test into the same installed temporary source, its
+full suite (`-B -m unittest discover -s tests -v`) passed all 41 tests in
+8.432 seconds. The generated source metadata was still present. Output is
+`04-test/output/installation-first-after.txt`.
+
+After committing the repair, `python3 _system/scripts/sdlc.py verify
+version-option` passed: 41 tests in 8.415 seconds plus the six-test checklist
+in 4.063 seconds. The generated receipt and log are in `04-test/output/`.
+Status reports verification current and the checklist 2/2 passed. The existing
+README attestation predates this repair, which changes neither documentation nor
+command behavior, so it was retained. No assertions, approved checks or
+configuration were weakened.
+
+`principle-build-the-lever` informed the saved test repair and repeatable
+installation-first check. `principle-prove-it-works` required rerunning the actual
+installed and source commands through the tests. `unslop` guided this handoff.
+Features and Futures decision: proceed to independent review of the repair.
+The demonstrated local obstacle is resolved; no broader workflow change is
+justified by this test defect.
+
+This session did not push, edit the PR, or merge. Updated independent review,
+remote CI, the delivery retrospective and the independent archive remain with
+the coordinator. Local results do not establish remote platform success.
