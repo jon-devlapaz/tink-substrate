@@ -85,3 +85,31 @@ Guidance failures hit: (1) `full:` path missing before a mount; (2) `--payload`
 without `--json` rejected; (3) AGENTS.md was already modified (uncommitted) by the
 stage-open recompile to planning-skillset, dropping the unslop line.
 Not verified: remote CI with the new pin, the fresh-agent trial, the tink#94 build.
+
+## Build session 1 (stage 3, reproduction only)
+
+Scope: wrote `tests/test_skill_read_guidance.py`; no installer or docs change yet.
+No `lock-tests`, `decide`, `mark` or push. Evidence: `03-build/output/baseline.md`.
+
+Skill loading, commands as printed by `03-build/rules.md` (AGENTS.md lines 54-55):
+- `ls .tink/.active/principle-build-the-lever/SKILL.md` and the same for `unslop`:
+  both exit 0 this time (paths existed from the stage-1 mounts; `.tink/.active` is
+  untracked local state, so this does not show the fresh-checkout case is fixed).
+- `tink mount unslop --payload` (the form in the printed launch hint): exit 2,
+  "required arguments were not provided: --json". Guidance failure, reproduced.
+- `tink mount unslop --json --payload` and `tink mount principle-build-the-lever
+  --json --payload`: exit 0, full skill text in `payload.content`. This is the
+  known-good form, not the printed one; counts as a workaround of printed guidance.
+- Both rule lines were present in AGENTS.md at this stage. Stage-3 pick:
+  `skills/stage-3-pick.json` has `status: error`, no routed skill.
+Skills that changed a decision: `principle-build-the-lever` made the scan a pure
+function plus a rerunnable pin test and throwaway runners, not a hand check.
+`unslop` kept the test docstring and this note plain.
+
+Test design: TINK_SDLC_CACHE (CACHE/tink-sdlc) else --no-checkout clone of the
+PINS url; skip locally if unavailable, fail when CI is set. Tests: scanner unit
+cases, old pin 328a230 must show the bug, `PINS['tink-sdlc']` must show none.
+Results: at pin 328a230 the pin test fails (SDLC.md:91 and scripts/sdlc.py:1122);
+with PINS patched in memory to 9172e2d (throwaway runner outside the checkout) all
+5 pass, and the full suite (49) passes. At 328a230 the full suite has exactly one
+failure, the new test. Not done: installer pin change, docs, lock-tests, trial.
