@@ -1,0 +1,7 @@
+{
+  "item": "version-documentation",
+  "result": "passed",
+  "evidence": "README merge preserves both command forms and expected tink-substrate 0.1.0 output; source command checked after merge 4ccd29a.",
+  "candidate": "c7fb93a6bba3b8289d6e542c2ee6ce0987268cd83feb523c83192c0351e743ab",
+  "time_ns": 1791171714838832000
+}

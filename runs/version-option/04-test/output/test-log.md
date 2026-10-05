@@ -10,6 +10,10 @@ test_groups_existing_outputs_and_keeps_future_stages_empty (test_artifacts.Artif
 test_light_review_keeps_brief_and_checklist_together (test_artifacts.ArtifactTests.test_light_review_keeps_brief_and_checklist_together) ... ok
 test_unsafe_large_and_missing_linked_documents_are_visible_errors (test_artifacts.ArtifactTests.test_unsafe_large_and_missing_linked_documents_are_visible_errors) ... ok
 test_saved_selection_explains_restart_and_preserves_config_path (test_cli.SelectionTests.test_saved_selection_explains_restart_and_preserves_config_path) ... ok
+test_existing_symlink_is_not_followed (test_install_skill.InstallSkillTests.test_existing_symlink_is_not_followed) ... ok
+test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpp1chau1g/missing': No such file or directory
+ok
+test_independent_copy_and_repeat_preserves_destination (test_install_skill.InstallSkillTests.test_independent_copy_and_repeat_preserves_destination) ... ok
 test_empty_or_failed_text_stays_unavailable (test_legacy_status.LegacyStatusTests.test_empty_or_failed_text_stays_unavailable) ... ok
 test_explicit_unsupported_json_shows_text_without_inferred_approval (test_legacy_status.LegacyStatusTests.test_explicit_unsupported_json_shows_text_without_inferred_approval) ... ok
 test_other_errors_and_bad_json_never_fall_back (test_legacy_status.LegacyStatusTests.test_other_errors_and_bad_json_never_fall_back) ... ok
@@ -43,7 +47,7 @@ test_source_version_without_config_or_subcommand (test_version.VersionTests.test
 test_version_exits_before_reading_config_or_running_commands (test_version.VersionTests.test_version_exits_before_reading_config_or_running_commands) ... ok
 
 ----------------------------------------------------------------------
-Ran 41 tests in 8.415s
+Ran 44 tests in 8.783s
 
 OK
 
@@ -57,6 +61,6 @@ test_source_version_without_config_or_subcommand (test_version.VersionTests.test
 test_version_exits_before_reading_config_or_running_commands (test_version.VersionTests.test_version_exits_before_reading_config_or_running_commands) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 4.063s
+Ran 6 tests in 4.090s
 
 OK
