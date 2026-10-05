@@ -113,3 +113,20 @@ Results: at pin 328a230 the pin test fails (SDLC.md:91 and scripts/sdlc.py:1122)
 with PINS patched in memory to 9172e2d (throwaway runner outside the checkout) all
 5 pass, and the full suite (49) passes. At 328a230 the full suite has exactly one
 failure, the new test. Not done: installer pin change, docs, lock-tests, trial.
+
+## Fresh-agent trial (coordinator)
+
+A fresh Claude Code subagent with no prior context got only the installed trial
+copy (branch 6da9737, tink-sdlc 9172e2d), tink built from tink#94 first on PATH
+behind a logging wrapper, and a temporary library copy via `TINK_HOME`. It set up
+tink-sdlc in a disposable repo, opened stage 1 and wrote a brief. Its one required
+skill loaded by running the printed rule line exactly (`tink mount
+principle-build-the-lever --json --payload`, exit 0, full text). The wrapper log
+shows no other mount attempts. Workarounds: 0. The control with tink 1.0.48 and
+pin 328a230 reproduced both failures. Evidence: `trial/`.
+
+Limits: stage 1 has one required skill; no routed skill was picked, so the
+launch-prompt hint was checked as text only; stages 3-5 were not run in the trial.
+Other observations from the trial agent (not skill loading): the launcher with
+`--here` leaves `runs/<run>` uncommitted, and the printed launch prompt has no
+handoff path until the coordinator appends one, as the guide says. Not in scope.

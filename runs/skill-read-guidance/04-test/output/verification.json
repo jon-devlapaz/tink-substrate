@@ -1,0 +1,4 @@
+{
+  "result": "failed",
+  "error": "Checklist incomplete: fresh-agent-trial (mark them with: sdlc.py mark skill-read-guidance <id> passed --evidence \"...\")"
+}

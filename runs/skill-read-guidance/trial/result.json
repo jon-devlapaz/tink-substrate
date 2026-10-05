@@ -1,0 +1,19 @@
+{
+ "result": "pass",
+ "workarounds": 0,
+ "agent": "fresh Claude Code subagent a5e0d5a1f7ed93a8b, no prior context",
+ "skill_loads": [
+  {
+   "guidance": "AGENTS.md rule line '(read: tink mount principle-build-the-lever --json --payload)'",
+   "command": "tink mount principle-build-the-lever --json --payload",
+   "exit": 0,
+   "full_text": true
+  }
+ ],
+ "control": "tink 1.0.48 + pin 328a230: rule path absent (ls exit 1); printed --payload form exit 2",
+ "limits": [
+  "Stage 1 requires one skill (principle-build-the-lever); unslop is not in planning-skillset.",
+  "No routed skill: the launcher printed no stage pick, so the launch-prompt --json --payload hint was checked as text in the installed sdlc.py and by tink-sdlc#43 unit tests, not by an agent run.",
+  "Stages 3-5 were not opened in the trial (needs human approval of the trial brief)."
+ ]
+}
