@@ -75,11 +75,16 @@ class VersionTests(unittest.TestCase):
         metadata = self.root / 'tink_substrate-99.0.0.dist-info'
         metadata.mkdir()
         (metadata / 'METADATA').write_text('Metadata-Version: 2.1\nName: tink-substrate\nVersion: 99.0.0\n')
-        env = dict(self.env, PYTHONPATH=str(self.root))
+        # Run outside ROOT so metadata left by `pip install .` cannot shadow
+        # the conflicting distribution. Import the actual source via PYTHONPATH.
+        env = dict(self.env, PYTHONPATH=os.pathsep.join((str(self.root), str(ROOT))))
         result = self.command([sys.executable, '-c',
-                               'import importlib.metadata as m; print(m.version("tink-substrate"))'], env=env)
+                               'import importlib.metadata as m; print(m.version("tink-substrate"))'],
+                              cwd=self.root, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, '99.0.0\n', result.stderr)
-        self.assert_version(self.command([sys.executable, '-m', 'tink_substrate', '--version'], env=env))
+        self.assert_version(self.command([sys.executable, '-m', 'tink_substrate', '--version'],
+                                         cwd=self.root, env=env))
 
     def test_built_package_console_module_and_metadata_outside_source(self):
         # Copy only build inputs so setuptools cannot leave files in the checkout.
