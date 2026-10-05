@@ -1,0 +1,7 @@
+{
+  "item": "fresh-agent-trial",
+  "result": "passed",
+  "evidence": "Trial in runs/skill-read-guidance/trial/ ran at tink-sdlc 9172e2d; merged pin 3b175bb differs only in assets/manifest.json version (1.18.2 -> 1.18.3) and two test asserts (git diff --stat 9172e2d 3b175bb), so the result carries over.",
+  "candidate": "6f8eaa7e904d5e708e245b9e0556f99ba252cbe0e5143b31eb590df4cefc9a23",
+  "time_ns": 1791176046924293000
+}

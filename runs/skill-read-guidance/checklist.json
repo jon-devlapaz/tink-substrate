@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "pin-candidate",
+      "description": "Pin tink-sdlc in scripts/install_skill.py to 3b175bbc8924a52512e7c12b29a4770e4f579267, the merge of tink-sdlc PR #43 (release 1.18.3), replacing the earlier candidate 9172e2d as the brief required before merge. Leave the Seed Me pin unchanged.",
+      "verify": "Diff shows only the tink-sdlc revision; tink-skills pin stays 58878b5794ca04a5ec0ba62027faadabfe7ca925. Installing to a temp destination records 3b175bb in installation.json.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-c",
+          "s=open('scripts/install_skill.py').read(); assert '3b175bbc8924a52512e7c12b29a4770e4f579267' in s and '9172e2dce2fd2c32e69bf9b60e2c03c3bf779ebb' not in s and '328a2304b9af703dd846666757d6ffd1166df470' not in s and '58878b5794ca04a5ec0ba62027faadabfe7ca925' in s"
+        ],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "repro-test",
+      "description": "Add tests/test_skill_read_guidance.py: bundled tink-sdlc SDLC.md and sdlc.py must not print 'tink mount ... --payload' without --json. Fails at old pin 328a230, passes at the current pin. Offline via TINK_SDLC_CACHE or by cloning the pin url; skips locally if neither works, fails when CI is set.",
+      "verify": "Run the test at the current pin (pass). Run it with the pin temporarily set to 328a230 (or the test's old-pin case) and record that it reports the missing --json. Check the test text states it does not prove tink's generated rule line.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-m",
+          "unittest",
+          "-v",
+          "tests.test_skill_read_guidance"
+        ],
+        "timeout_seconds": 180
+      }
+    },
+    {
+      "id": "docs-pin-wording",
+      "description": "docs/start-a-change.md and docs/new-user-validation.md name tink-sdlc 1.18.3 on merged history, and say the earlier validation used 328a230.",
+      "verify": "Review the changed lines against scripts/install_skill.py and _system/scaffold.json (version stays 1.18.2). No claim that the pin is merged or released."
+    },
+    {
+      "id": "full-suite",
+      "description": "Existing tests and the CI install step pass with the new pin.",
+      "verify": "Run the unittest suite, then scripts/install_skill.py to a temp destination, python -m tink_substrate --help, and init.py --check on a temp target, as in .github/workflows/ci.yml. Remote CI result is recorded separately and is not implied by local runs.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests"
+        ],
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "id": "fresh-agent-trial",
+      "description": "A new agent, given only a temp install of the branch and a tink built from jon-devlapaz/tink#94 (ab8d7e9) first on PATH, opens a stage on a disposable target and loads every required skill and a routed skill by running the printed commands exactly.",
+      "verify": "Pass only with zero workarounds as defined in brief.md. Evidence in runs/skill-read-guidance/trial/ (commands.log, agent-report.md, tools.json, result.json). Inspect commands.log: each load command matches printed guidance, exit 0, non-empty content. Record failures plainly. Evidence is manual; no automated check."
+    }
+  ]
+}

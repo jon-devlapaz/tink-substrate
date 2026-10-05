@@ -1,0 +1,3 @@
+2026-10-05T04:10:16Z	$TRIAL/target	exit=0	tink use --help
+2026-10-05T04:10:16Z	$TRIAL/target	exit=0	tink use planning-skillset --snapshot runs/add-sub/01-plan
+2026-10-05T04:10:23Z	$TRIAL/target	exit=0	tink mount principle-build-the-lever --json --payload

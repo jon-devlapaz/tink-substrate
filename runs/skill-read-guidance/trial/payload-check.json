@@ -1,0 +1,8 @@
+{
+ "source": "stdout of the logged call: tink mount principle-build-the-lever --json --payload",
+ "skill": "principle-build-the-lever",
+ "tree_digest": "sha256:e3bba643a08d279036ca2272ab7dbc7b809ac49e11986fcf186e9fa1576be145",
+ "mounted": false,
+ "payload_chars": 2458,
+ "payload_first_line": "---"
+}

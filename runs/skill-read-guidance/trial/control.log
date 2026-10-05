@@ -1,0 +1,12 @@
+## Control: installed tink tink 1.0.48 at /Users/jondev/.local/bin/tink; installed skill ~/.codex/skills/tink-substrate (tink-sdlc 328a230)
+Launch prompt (start a NEW session there):
+Begin stage 1 (plan) of SDLC run `ctl`.
+### Rule line
+(full: .tink/.active/principle-build-the-lever/SKILL.md; run: tink mount principle-build-the-lever)
+### Follow path
+ls: .tink/.active/principle-build-the-lever/SKILL.md: No such file or directory
+exit=1
+### Launch-prompt hint form
+tink mount {picked['winner']} --payload
+error: the following required arguments were not provided:
+exit=2

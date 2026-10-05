@@ -1,0 +1,7 @@
+{
+  "item": "docs-pin-wording",
+  "result": "passed",
+  "evidence": "Reviewed docs/start-a-change.md:65 and docs/new-user-validation.md:10-13 against scripts/install_skill.py and scaffold 1.18.2: pin called an unmerged candidate (PR #43), earlier validation named as 328a230, no merged/released claim.",
+  "candidate": "0c166c5f7c4146c897f74bdbb2fd2e0e07265dcdab669219eaa952df145ac59e",
+  "time_ns": 1791173294390475000
+}

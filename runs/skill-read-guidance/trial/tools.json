@@ -1,0 +1,21 @@
+{
+ "candidate_tink": {
+  "source": "jon-devlapaz/tink",
+  "revision": "ab8d7e9b3d505e864117d35be9ce21bd999f816e",
+  "pr": 94,
+  "version": "1.0.49",
+  "sha256": "d1169981c66cc7fb77932e7f6baa9310620199404e3e8633d2afc8bcadf2d4b3"
+ },
+ "control_tink": {
+  "path": "~/.local/bin/tink",
+  "version": "1.0.48"
+ },
+ "substrate_install": {
+  "source_revision": "6da9737f7eb7ea21b0b097d2ac0729e7acf03e9f",
+  "installation_json_sha256": "5b9d9aef262c61c1a8d9b3a9e6e1d0fde76b2dfebf314ef5751a46be77b0681a",
+  "tink_sdlc": "9172e2dce2fd2c32e69bf9b60e2c03c3bf779ebb",
+  "tink_skills": "58878b5794ca04a5ec0ba62027faadabfe7ca925"
+ },
+ "tink_home": "temporary copy of ~/.tink-library ($TRIAL/tink-home); real library untouched",
+ "trial_dir": "$TRIAL = session scratchpad; logging wrapper $TRIAL/bin/tink records every tink call"
+}

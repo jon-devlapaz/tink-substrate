@@ -1,0 +1,11 @@
+{
+  "files": {
+    "tests/test_skill_read_guidance.py": "6c8268ddced522331924b3113c3fcd0cd45af95fc18c66bca63ac41df0a68174"
+  },
+  "candidate": {
+    "head": "0f07a96f16f37bc21385eafde3335594541b4d83",
+    "tree": "a3e08cc26137bab170c33b43f0d520f5a766a841f2c5d5f63ce57563e26ecff6"
+  },
+  "review_source": "Independent reviewer agent a306d184039a863db, runs/skill-read-guidance/03-build/output/test-review.md at 0f07a96 (ACCEPT, no Important findings)",
+  "failure_evidence": "runs/skill-read-guidance/03-build/output/baseline.md and test-review.md: test_current_pin_tells_agents_to_use_json fails at pin 328a230 (SDLC.md:91, sdlc.py:1122), reproduced by reviewer with cache and network clone"
+}
