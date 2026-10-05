@@ -1,0 +1,31 @@
+test_mount_hints_use_json (tests.test_workspace_guidance.WorkspaceGuidanceTests.test_mount_hints_use_json) ... FAIL
+test_workspace_files_present (tests.test_workspace_guidance.WorkspaceGuidanceTests.test_workspace_files_present) ... ok
+
+======================================================================
+FAIL: test_mount_hints_use_json (tests.test_workspace_guidance.WorkspaceGuidanceTests.test_mount_hints_use_json)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/jondev/dev/active/factory/working-copies/tink-substrate-workspace-1-18-3/tests/test_workspace_guidance.py", line 32, in test_mount_hints_use_json
+    self.assertEqual(found, [], 'workspace prints `tink mount ... --payload` without --json; '
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                'tink exits 2 on it: ' + repr(found))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('_system/SDLC.md', 91, 'tink mount <skil[125 chars]")')] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+('_system/SDLC.md', 91, 'tink mount <skill> --payload` before relying on it). Abstent')
+
++ []
+- [('_system/SDLC.md',
+-   91,
+-   'tink mount <skill> --payload` before relying on it). Abstent'),
+-  ('_system/scripts/sdlc.py',
+-   1122,
+-   'tink mount {picked[\'winner\']} --payload.")')] : workspace prints `tink mount ... --payload` without --json; tink exits 2 on it: [('_system/SDLC.md', 91, 'tink mount <skill> --payload` before relying on it). Abstent'), ('_system/scripts/sdlc.py', 1122, 'tink mount {picked[\'winner\']} --payload.")')]
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)
+exit=1

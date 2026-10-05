@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "reproduce-stale-hint",
+      "description": "On the unfixed files (main 0fd38d7 plus only the new test), tests/test_workspace_guidance.py fails and names SDLC.md and sdlc.py as lacking --json. Record the failing output as the reproduction and lock the test.",
+      "verify": "Run the new test before the upgrade and attach the failure output as evidence (mark with the transcript); then lock-tests with the accepted review reference."
+    },
+    {
+      "id": "workspace-guidance-test",
+      "description": "tests/test_workspace_guidance.py passes: no `tink mount ... --payload` without --json in _system/SDLC.md, _system/scripts/sdlc.py, stages/*/CONTEXT.md or AGENTS.md.",
+      "verify": "The check runs the test file.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_workspace_guidance.py",
+          "-v"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "receipt-1-18-3",
+      "description": "_system/scaffold.json records version 1.18.3.",
+      "verify": "The check reads the receipt version.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-c",
+          "import json,sys; v=json.load(open('_system/scaffold.json'))['version']; sys.exit(0 if v=='1.18.3' else 'version is '+v)"
+        ],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "upgrade-scope",
+      "description": "The upgrade changed only _system/SDLC.md, _system/scripts/sdlc.py, stages/04-test/CONTEXT.md, _system/scaffold.json, and the AGENTS.md rules block. Managed files match the 1.18.3 receipt hashes (`init.py <repo> --check` from the installed package reports a valid install). The AGENTS.md router block and project-owned files are unchanged.",
+      "verify": "Attested: record the `git diff --stat origin/main` file list and the init.py --check output as evidence."
+    },
+    {
+      "id": "walk-passes",
+      "description": "sdlc.py walk passes all checks, including W7 (rules block current).",
+      "verify": "The check runs the walk lint.",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "_system/scripts/sdlc.py",
+          "walk"
+        ],
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "id": "verification-config-unchanged",
+      "description": "_system/verification.json is identical to origin/main.",
+      "verify": "The check diffs the file against origin/main.",
+      "check": {
+        "argv": [
+          "git",
+          "diff",
+          "--exit-code",
+          "--quiet",
+          "origin/main",
+          "--",
+          "_system/verification.json"
+        ],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "history-preserved",
+      "description": "Existing run evidence is untouched: runs/skill-read-guidance and runs/version-option are identical to origin/main.",
+      "verify": "The check diffs those two run directories against origin/main.",
+      "check": {
+        "argv": [
+          "git",
+          "diff",
+          "--exit-code",
+          "--quiet",
+          "origin/main",
+          "--",
+          "runs/skill-read-guidance",
+          "runs/version-option"
+        ],
+        "timeout_seconds": 30
+      }
+    },
+    {
+      "id": "launch-prompt-prints-json",
+      "description": "Real check. In a disposable clone of the upgraded branch (not this checkout) with a stub tink-route first on PATH that routes a skill, a real `sdlc.py stage <run> <n> --here` open prints a launch prompt containing `tink mount <skill> --json --payload` (`--check` never prints the pick). Running that exact printed command with real tink exits 0 and returns the skill. SDLC.md in the clone shows `--json --payload` too.",
+      "verify": "Attested: record the printed sentence, the command, and its exit status. Delete the clone afterwards."
+    }
+  ]
+}

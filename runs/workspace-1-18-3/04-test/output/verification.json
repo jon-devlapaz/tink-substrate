@@ -1,0 +1,27 @@
+{
+  "result": "passed",
+  "candidate": {
+    "head": "0fd38d7e77d5ab305dbc141082d0a9e3b07706eb",
+    "tree": "1103fb15378ab5cde66590a8ce3b9ddd7ac43e3be1c2bfa2c052169c4ccf2942"
+  },
+  "inputs": "00839d1a4b5be0969f0f3f0db12d57309c66793b6b2cd1ad9dcd8eb00a9a9dbb",
+  "policy": "5d5970adf2a2653038dc1256dbbb8be2ca816ec5af99f2c70ea227ed9c1ea4e2",
+  "test_lock": "768fbfd770497baf01d88b890eadfe2050af2822ec9c8cc470701d539fae5c33",
+  "checklist": "258976e3c8f9b214a43edf9da1b6ec73fafd995206273c1e0dbfdd3f78838b1b",
+  "manual_marks": {
+    "reproduce-stale-hint": "44710f96790a83c96d7ba12c410b5f18530773c7c4a4ae4f3299ff19e506b657",
+    "upgrade-scope": "03a33c26f2efcf10a164b7b05747be9c8eb4d2a0ef7aab3983041b72b4084850",
+    "launch-prompt-prints-json": "d1a7dde5d29a92b666180f1c73b61aa4c164203fbdbb69d37bae9a8c13227c13"
+  },
+  "checklist_items": {
+    "reproduce-stale-hint": "attested",
+    "workspace-guidance-test": "proven",
+    "receipt-1-18-3": "proven",
+    "upgrade-scope": "attested",
+    "walk-passes": "proven",
+    "verification-config-unchanged": "proven",
+    "history-preserved": "proven",
+    "launch-prompt-prints-json": "attested"
+  },
+  "log": "86856b0d2dbca664d3c648b5556b8d82e8a7b205440b35b7284c388a32757746"
+}

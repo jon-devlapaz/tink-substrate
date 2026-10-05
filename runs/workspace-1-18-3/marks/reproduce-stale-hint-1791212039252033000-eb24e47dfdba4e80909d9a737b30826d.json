@@ -1,0 +1,7 @@
+{
+  "item": "reproduce-stale-hint",
+  "result": "passed",
+  "evidence": "runs/workspace-1-18-3/evidence/repro-before-upgrade.txt; reviewed in evidence/repro-review.md; locked via lock-tests",
+  "candidate": "7489731926fe4290e2d9eb34ceeb40025fc9bb576d8a3ce99c4f4071d7def128",
+  "time_ns": 1791212039252033000
+}

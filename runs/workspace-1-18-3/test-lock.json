@@ -1,0 +1,12 @@
+{
+  "files": {
+    "tests/test_workspace_guidance.py": "47613f5d422e5430573c07d1aafec3bd4ae3eec88c8df44406b715a79966d72d",
+    "tests/test_skill_read_guidance.py": "6c8268ddced522331924b3113c3fcd0cd45af95fc18c66bca63ac41df0a68174"
+  },
+  "candidate": {
+    "head": "0fd38d7e77d5ab305dbc141082d0a9e3b07706eb",
+    "tree": "7489731926fe4290e2d9eb34ceeb40025fc9bb576d8a3ce99c4f4071d7def128"
+  },
+  "review_source": "runs/workspace-1-18-3/evidence/repro-review.md (independent subagent review, ACCEPT)",
+  "failure_evidence": "runs/workspace-1-18-3/evidence/repro-before-upgrade.txt"
+}

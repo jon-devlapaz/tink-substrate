@@ -1,0 +1,8 @@
+{
+  "inputs": "00839d1a4b5be0969f0f3f0db12d57309c66793b6b2cd1ad9dcd8eb00a9a9dbb",
+  "decision": "approved",
+  "has_checklist": true,
+  "reviewer": "jon-devlapaz (human)",
+  "source": "Coordinating Claude Code session 2026-10-05: user replied \"Yes\" to re-approving the same brief under 1.18.3 contracts",
+  "reason": "Re-approval after scaffold upgrade staled the pre-upgrade approval; brief unchanged"
+}

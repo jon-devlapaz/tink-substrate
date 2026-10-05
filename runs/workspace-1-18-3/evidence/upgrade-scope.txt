@@ -1,0 +1,14 @@
+## git diff --stat origin/main
+ AGENTS.md                 | 6 +++---
+ _system/SDLC.md           | 2 +-
+ _system/scaffold.json     | 8 ++++----
+ _system/scripts/sdlc.py   | 2 +-
+ stages/04-test/CONTEXT.md | 9 +++++----
+ 5 files changed, 14 insertions(+), 13 deletions(-)
+## init.py --check
+Installed scaffold matches package; no files changed.
+Project-owned, changed locally: _system/verification.json
+Verification: configured; inspect checks before use.
+exit=0
+## router block diff
+1
