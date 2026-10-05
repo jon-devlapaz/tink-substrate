@@ -1,0 +1,6 @@
+skills: compiled deployment-skillset into /Users/jondev/dev/active/factory/working-copies/tink-substrate-workspace-1-18-3-review-workspace-1-18-3
+skill pick: skipped (router exited 2)
+Checkout: /Users/jondev/dev/active/factory/working-copies/tink-substrate-workspace-1-18-3-review-workspace-1-18-3
+Launch prompt (start a NEW session there):
+Begin stage 5 (deploy) of SDLC run `workspace-1-18-3`.
+(read: tink mount principle-prove-it-works --json --payload)

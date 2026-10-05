@@ -63,3 +63,15 @@
   A plain stage open will likely print no mount line, so the launch-prompt check
   also uses a stub router in a disposable clone, and the printed command is run
   against real tink.
+
+## Build and delivery observations (2026-10-05)
+
+- Pre-upgrade approval recorded, then stage 3 opened `--here` (build-skillset compiled; rules block reads `--json --payload`).
+- Reproduction: new test failed on SDLC.md:91 and sdlc.py:1122 (evidence/repro-before-upgrade.txt). Independent review ACCEPT (evidence/repro-review.md); test locked.
+- `init.py --upgrade` updated exactly SDLC.md, sdlc.py, stages/04-test/CONTEXT.md and the receipt. It listed skill-read-guidance, version-option and this run as going stale. This run's approval went stale as planned; the user re-approved the same brief ("Yes"). Historical runs left stale, not re-approved.
+- Verify: configured checks passed; checklist 8/8; verification current.
+- Launch prompt, stub router: printed `tink mount unslop --json --payload`; that exact command exits 0 with tink 1.0.50 (evidence/launch-prompt-check.txt). Gotcha: the pyenv python shim puts its own `tink-route` ahead of PATH entries, so the stub needed the interpreter's absolute path.
+- Real stage 5 open in this repo (evidence/stage-5-open.txt): router errored, so the prompt has no pick line, as predicted. The compiled AGENTS.md in the review worktree reads `(read: tink mount principle-prove-it-works --json --payload)`.
+- Root cause of every router error in this repo: `tink-route --pick` returns `{"status":"error","reason":"no_api_key"}` (exit 2). Out of scope; routing is optional in this setup.
+- Independent PR review: ACCEPT, no Important findings (05-deploy/output/REVIEW-findings.md).
+- Review worktree created by the launcher: `working-copies/tink-substrate-workspace-1-18-3-review-workspace-1-18-3` (detached).
