@@ -9,8 +9,8 @@ OS and installed interpreters; they were not a fresh-machine test.
 
 - Public clones reached Seed Me `58878b5794ca04a5ec0ba62027faadabfe7ca925`
   (1.17.1) and SDLC `328a2304b9af703dd846666757d6ffd1166df470` (1.18.2).
-  Seed Me was on merged public history. This validation used SDLC 328a230, which
-  is no longer the pin; the pin is now an unmerged candidate (see start-a-change).
+  Both were on merged public history. The current SDLC pin is 1.18.3 (`3b175bb`),
+  which fixes skill reading guidance; this validation predates it.
 - Installer preview was non-mutating; install preserved project instructions.
 - Planning opened without optional Tink tools and reported skipped stage skills.
   An installed Tink with an empty library explicitly refused stage opening.

@@ -130,3 +130,7 @@ launch-prompt hint was checked as text only; stages 3-5 were not run in the tria
 Other observations from the trial agent (not skill loading): the launcher with
 `--here` leaves `runs/<run>` uncommitted, and the printed launch prompt has no
 handoff path until the coordinator appends one, as the guide says. Not in scope.
+
+## Repin after upstream merges (coordinator)
+
+The user authorized merging what is needed ("i give you permission to merge what is needed", after "Do all and do the pragmatic, clean decision that considers maintainability"). Decided: tink-sdlc #43 ships alone as 1.18.3; #42 (runtime API, unreviewed) stays open for 1.19.0. Merged tink-sdlc#43 as 3b175bb (merge commit, repo convention) and tink#94 as 4eb701d (squash, repo convention; bump-release publishes v1.0.50). Repinned to 3b175bb as the approved brief required before merge, and updated the pin-candidate and docs items to that end state.

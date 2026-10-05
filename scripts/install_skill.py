@@ -16,9 +16,7 @@ PINS = {
     'tink-skills': ('https://github.com/jon-devlapaz/tink-skills.git',
                     '58878b5794ca04a5ec0ba62027faadabfe7ca925'),
     'tink-sdlc': ('https://github.com/jon-devlapaz/tink-sdlc.git',
-                  # Unmerged candidate (tink-sdlc PR #43). Replace with the
-                  # merged/released revision before merging this change.
-                  '9172e2dce2fd2c32e69bf9b60e2c03c3bf779ebb'),
+                  '3b175bbc8924a52512e7c12b29a4770e4f579267'),
 }
 
 
