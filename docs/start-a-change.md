@@ -1,31 +1,30 @@
 # Start a change
 
 Use this when a fresh person or agent starts a change from Substrate. The dashboard
-is packaged here. Seed Me and tink-sdlc are external tools; this guide connects them.
+is packaged here. The installed skill includes pinned Seed Me and tink-sdlc sources.
 An agent host is still required. This is not yet a one-command software factory.
 
 ## 1. Check the basics
 
 The first path targets macOS with Codex Desktop and one existing Git repository.
-Open the target project in Codex, and give the agent the absolute Substrate path.
+Open the target project in Codex and invoke the installed skill.
 The agent reads that project's instructions before choosing a separate checkout.
 The complete Codex Desktop handoff is still to be tested. Host permissions may
 require access to the selected checkouts, evidence directories and network; record
 actual prompts rather than assuming the author's permissions. Other agent hosts and
 Linux are outside the first user trial.
 
-The approved publication target is `https://github.com/jon-devlapaz/tink-substrate`
-under MIT. After the first push, obtain it with:
+The public repository is `https://github.com/jon-devlapaz/tink-substrate`
+under MIT. Obtain it with:
 
 ```sh
 git clone https://github.com/jon-devlapaz/tink-substrate.git
 cd tink-substrate
+python3 scripts/install_skill.py
 ```
 
-This public clone path and remote CI still need validation. Before publication,
-a local evaluation can use `git clone /absolute/path/to/reviewed-substrate
-/path/to/new-copy` on one command line. A file-only copy lacks the Git history.
-The two workflow sources below are already public.
+The public clone and initial GitHub checks have passed. The two workflow sources
+below are also public.
 
 For this first path, use macOS with Python 3.11+, Git, and Bash.
 The underlying runtime also supports Linux, but that is outside this user trial. Git needs your commit identity.
@@ -47,28 +46,26 @@ and `git worktree list`. Confirm its Git identity with `git config user.name` an
 Substrate's status separately if you plan to change Substrate itself.
 
 Keep existing changes and active worktrees. Choose a separate checkout for the run.
-Run the commands below from the Substrate checkout unless another directory is named.
+Run the commands below from the installed skill directory (the package root) unless
+another directory is named. Source development must first install committed HEAD to a separate trial directory.
 
 ## 2. Obtain the workflow tools
 
-These commands download two repositories from GitHub into the ignored
-`.substrate-tools/` directory. They use specific revisions inspected for this guide,
-not the latest upstream versions. No global skill installation is required.
-Run this once in a fresh directory; if it already exists, inspect it before reusing
-it. Do not reset an existing checkout to make these commands work.
+The copied skill already contains these tools in `.substrate-tools/`, with licenses
+and revisions listed in `installation.json`. No global skill library is required.
+Do not modify the installation or fetch tools during a run. If a required file is
+missing, report the incomplete installation and install to a review directory outside the host's skills directory. After validation,
+move the old copy outside the skills directory for backup and put the new copy at
+the original path. Keep only one discoverable entry skill.
 
-```sh
-mkdir -p .substrate-tools
-git clone --no-checkout https://github.com/jon-devlapaz/tink-skills.git .substrate-tools/tink-skills
-git -C .substrate-tools/tink-skills checkout --detach 58878b5794ca04a5ec0ba62027faadabfe7ca925
-git clone --no-checkout https://github.com/jon-devlapaz/tink-sdlc.git .substrate-tools/tink-sdlc
-git -C .substrate-tools/tink-sdlc checkout --detach 328a2304b9af703dd846666757d6ffd1166df470
-```
+For source development, the installer can use `--tool-cache PATH` with local Git
+clones containing the pinned commits. It exports committed files at those pins,
+not mutable working copies. Ordinary installation fetches those commits itself.
 
 The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.18.2. Both pins are on merged public history.
 This SDLC version supplies text status; the dashboard displays it without
 inventing structured verification or approval.
-Their original licenses remain in those checkouts. Updating either revision is a
+Their original licenses remain in the bundled sources. Updating either revision is a
 separate, reviewed dependency change. Network or authentication failures mean the
 tool is unavailable; do not substitute remembered instructions.
 
@@ -142,7 +139,8 @@ an explicit setup commit on that branch. Include it in the eventual PR; it does
 not approve the feature. Stage exact paths, preserving unrelated files. The
 launcher is not a substitute for this commit. Runtime lock files such as
 `runs/.<run>.lock` and `runs/<run>/.writer-lock` are not evidence: exclude those
-exact runtime paths from tracking; do not ignore all run artifacts.
+exact runtime paths using the checkout's local Git exclude file
+(`git rev-parse --git-path info/exclude`); untracked files also block archiving; do not ignore all run artifacts.
 
 From the target checkout, read `_system/SDLC.md` and `stages/01-plan/CONTEXT.md`.
 Inspect status before creating a run. A small change normally fits the light
@@ -202,7 +200,7 @@ handoff = "runs/example-change/handoff.md"
 +++
 ```
 
-For the dashboard, copy the confirmed seed contract from its external session
+If a confirmed seed exists, copy it for the dashboard from its external session
 into `runs/<run>/seed-contract.md` in the target checkout, without rewriting its
 content or confirmation details. Keep the original session. Dashboard artifact
 paths are relative to the target checkout and cannot point outside it.
@@ -225,9 +223,10 @@ retrospective and independent archive at delivery, then record later feedback an
 merge separately. The agent owns these steps during the run. The dashboard does
 not watch GitHub or trigger them in the background.
 
-## Use it on an existing repo
+## Use it without the entry skill
 
-Give your agent the absolute path to this checkout and this request:
+Run the installer first. Give your agent the absolute path to the installed
+skill directory and this request (replace `/path/to/tink-substrate` with that path):
 
 > Read /path/to/tink-substrate/AGENTS.md and
 > /path/to/tink-substrate/docs/start-a-change.md. Use this workflow
@@ -247,15 +246,15 @@ the exact conflict; do not silently upgrade it during feature work.
 
 Earlier supervised changes used the author's skill-equipped setup. This
 pinned basic path has not yet delivered a change or proved unattended delivery
-or setup on a fresh machine. Seed Me, tink-sdlc, the agent host,
-GitHub authentication and project build tools remain external requirements.
+or setup on a fresh machine. The agent host, interpreter, GitHub authentication
+and project build tools remain external requirements.
 
 ## Recover without starting over
 
 - **Interrupted agent:** read the saved work record, target instructions, brief,
   handoff and current `sdlc.py status <run>`. Check the checkout and PR revisions.
   Resume the existing run; never recreate approval from remembered conversation.
-- **Older SDLC:** text status is expected on 1.18.2. The dashboard labels it; use
+- **Pinned SDLC:** text status is expected on 1.18.2. The dashboard labels it; use
   the installed status command for its decisions. Do not upgrade just for a badge.
 - **Tink present but empty:** planning stops with `Skill ... not found in library`
   and `stage not opened`. Review the installed stage's skillset pin and use the
