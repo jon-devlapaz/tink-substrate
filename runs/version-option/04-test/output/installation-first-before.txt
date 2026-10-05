@@ -1,0 +1,39 @@
+Processing ./.
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: tink-substrate
+  Building wheel for tink-substrate (pyproject.toml): started
+  Building wheel for tink-substrate (pyproject.toml): finished with status 'done'
+  Created wheel for tink-substrate: filename=tink_substrate-0.1.0-py3-none-any.whl size=22377 sha256=f499d6a7e152c3e66cdafec5eff7645c8b1b4a4f77cca0b688ecaf9f1309d04c
+  Stored in directory: /private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/pip-ephem-wheel-cache-fxofjlvx/wheels/0d/3b/39/581a2323f73a9a3872281e54f52d37095a545c568d44881b2f
+Successfully built tink-substrate
+Installing collected packages: tink-substrate
+Successfully installed tink-substrate-0.1.0
+
+test_built_package_console_module_and_metadata_outside_source (test_version.VersionTests.test_built_package_console_module_and_metadata_outside_source) ... ok
+test_help_and_missing_subcommand (test_version.VersionTests.test_help_and_missing_subcommand) ... ok
+test_missing_malformed_and_selected_config_unchanged (test_version.VersionTests.test_missing_malformed_and_selected_config_unchanged) ... ok
+test_source_ignores_other_distribution_version (test_version.VersionTests.test_source_ignores_other_distribution_version) ... FAIL
+test_source_version_without_config_or_subcommand (test_version.VersionTests.test_source_version_without_config_or_subcommand) ... ok
+test_version_exits_before_reading_config_or_running_commands (test_version.VersionTests.test_version_exits_before_reading_config_or_running_commands) ... ok
+
+======================================================================
+FAIL: test_source_ignores_other_distribution_version (test_version.VersionTests.test_source_ignores_other_distribution_version)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/version-repair-zh8_zmeh/source/tests/test_version.py", line 81, in test_source_ignores_other_distribution_version
+    self.assertEqual(result.stdout, '99.0.0\n', result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '0.1.0\n' != '99.0.0\n'
+- 0.1.0
++ 99.0.0
+ : 
+
+----------------------------------------------------------------------
+Ran 6 tests in 4.134s
+
+FAILED (failures=1)

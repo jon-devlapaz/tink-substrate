@@ -9,6 +9,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
 
+from . import __version__
 from .archive import archive_run
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
@@ -18,6 +19,7 @@ DEFAULT_CONFIG = Path.home() / '.config/tink-substrate/config.json'
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--version', action='version', version=f'tink-substrate {__version__}')
     parser.add_argument('--config', type=Path, default=DEFAULT_CONFIG)
     commands = parser.add_subparsers(dest='command', required=True)
     init = commands.add_parser('init', help='select a work record and checkout')

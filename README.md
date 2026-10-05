@@ -50,6 +50,23 @@ missing prerequisite. Your host may ask for permission to access the checkouts,
 local records or network. If it cannot keep the dashboard running, the agent gives
 you one command to start the configured view. Existing project rules still apply.
 
+## Check the version
+
+From the source checkout, run:
+
+```sh
+python3 -m tink_substrate --version
+```
+
+After installing the package, you can also run:
+
+```sh
+tink-substrate --version
+```
+
+Both print `tink-substrate <package version>`, for example `tink-substrate 0.1.0`.
+No configuration or subcommand is required.
+
 ## What works today
 
 The dashboard and archive command work today. The entry skill delegates setup to

@@ -1,0 +1,7 @@
+{
+  "item": "version-documentation",
+  "result": "passed",
+  "evidence": "Reviewed README.md lines 39-54 against python3 -m tink_substrate --version output: tink-substrate 0.1.0. tests/test_version.py also built and installed the package in a temporary environment and observed the same exact output, exit 0, and empty stderr for its generated console command and module command outside the source checkout. The package version remains 0.1.0.",
+  "candidate": "679ef6b48010d54bc7a752101efb7edddd387c9688d9fe413faca53edf4e503d",
+  "time_ns": 1791170690056258000
+}

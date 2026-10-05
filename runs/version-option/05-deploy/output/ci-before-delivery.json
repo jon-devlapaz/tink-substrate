@@ -1,0 +1,47 @@
+{
+  "headRefOid": "1126c6615fa9d7afb09f1e1db3067d6bfbdda43b",
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-05T03:33:40Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jon-devlapaz/tink-substrate/actions/runs/37259893837/job/111604728561",
+      "name": "test (ubuntu-latest, 3.11)",
+      "startedAt": "2026-10-05T03:33:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Package checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-05T03:33:32Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jon-devlapaz/tink-substrate/actions/runs/37259890780/job/111604719229",
+      "name": "test (ubuntu-latest, 3.11)",
+      "startedAt": "2026-10-05T03:33:15Z",
+      "status": "COMPLETED",
+      "workflowName": "Package checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-05T03:34:20Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jon-devlapaz/tink-substrate/actions/runs/37259893837/job/111604728847",
+      "name": "test (macos-latest, 3.14)",
+      "startedAt": "2026-10-05T03:33:23Z",
+      "status": "COMPLETED",
+      "workflowName": "Package checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-05T03:34:15Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jon-devlapaz/tink-substrate/actions/runs/37259890780/job/111604719519",
+      "name": "test (macos-latest, 3.14)",
+      "startedAt": "2026-10-05T03:33:19Z",
+      "status": "COMPLETED",
+      "workflowName": "Package checks"
+    }
+  ],
+  "url": "https://github.com/jon-devlapaz/tink-substrate/pull/2"
+}
