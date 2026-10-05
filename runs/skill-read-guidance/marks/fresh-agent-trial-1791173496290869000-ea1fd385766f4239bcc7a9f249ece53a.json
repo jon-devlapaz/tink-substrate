@@ -1,0 +1,7 @@
+{
+  "item": "fresh-agent-trial",
+  "result": "passed",
+  "evidence": "runs/skill-read-guidance/trial/ at e73efaf: fresh agent loaded required skill via printed '(read: tink mount NAME --json --payload)' exit 0, 0 workarounds; wrapper log commands.log; control reproduced both failures. Limits in result.json.",
+  "candidate": "0c166c5f7c4146c897f74bdbb2fd2e0e07265dcdab669219eaa952df145ac59e",
+  "time_ns": 1791173496290869000
+}

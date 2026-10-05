@@ -1,4 +1,23 @@
 {
-  "result": "failed",
-  "error": "Checklist incomplete: fresh-agent-trial (mark them with: sdlc.py mark skill-read-guidance <id> passed --evidence \"...\")"
+  "result": "passed",
+  "candidate": {
+    "head": "e73efaf790a91edf08df1cf6cc60b81cbe8e09c8",
+    "tree": "0c166c5f7c4146c897f74bdbb2fd2e0e07265dcdab669219eaa952df145ac59e"
+  },
+  "inputs": "dc13a2d239020be76545d8606fb7aa16b1b29faa1c8e0b59c212f67a20ac9c5d",
+  "policy": "5d5970adf2a2653038dc1256dbbb8be2ca816ec5af99f2c70ea227ed9c1ea4e2",
+  "test_lock": "f6c38539dd09b44bbd92eec8e12f9a8daefd12573f82198d585c220150988ee1",
+  "checklist": "fa7ba2ce757f770e4ec56a5a9093cdf69847ceb7d2e65ce4437143adaa964a9e",
+  "manual_marks": {
+    "docs-pin-wording": "9f88e45761185f65d9ab0f124d9cfbd8d081c071ef045ea66ebfa6c8612f2472",
+    "fresh-agent-trial": "f13ea3b768d2b3f355414e400e0f3ab9b2eb4241db7533a347b2a4c488b418c9"
+  },
+  "checklist_items": {
+    "pin-candidate": "proven",
+    "repro-test": "proven",
+    "docs-pin-wording": "attested",
+    "full-suite": "proven",
+    "fresh-agent-trial": "attested"
+  },
+  "log": "c0635463c7419a24a84dde6891a34f1c961facce3bcb15734c081a08b3443d56"
 }
