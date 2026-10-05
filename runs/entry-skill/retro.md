@@ -40,3 +40,27 @@ Keep the entry skill small and retain existing workflow ownership. The setup-to-
 brief path worked. Next, use it for a real bounded change with actual human brief
 acceptance and observe delivery and resume. Do not introduce more automation until
 that use demonstrates a specific need.
+
+## Packaging follow-up
+
+The linked entry skill still required a development checkout. Added a copied
+installation containing Substrate, guides, pinned Seed Me and SDLC sources,
+licenses and a file-hash receipt. Run records stay outside the installation.
+The installer refuses existing destinations rather than replacing user work.
+
+Evidence: 38 tests pass. Network installation succeeded. Under a macOS sandbox
+blocking development repos and personal skills, the copied package opened planning
+without Tink or network access, recovered status and refused unapproved verification.
+Separate dashboard and synthetic archive checks passed. One test initially probed
+an incorrect HTTP endpoint; fixing the probe required no product change.
+
+This establishes package independence for these commands, not complete agent-led
+PR delivery. Preserve that distinction while testing the actual human approval
+and later delivery steps. No additional orchestrator or global settings were added.
+
+A fresh agent then read only the installed package under the same sandbox and
+produced the actual trial brief/checklist without extra coaching. It corrected
+the trial's test command to reject zero tests. Human acceptance remains pending;
+no feature implementation or approval occurred. Native Claude review prompted
+committed-source exports, source revision recording, a completion receipt written
+last, a file-hash check, and explicit update instructions outside skill discovery.

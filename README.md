@@ -14,25 +14,29 @@ The agent performs the work; you choose the direction and make required decision
 
 ## Start here
 
-Clone this repository once, then link its entry skill into Codex:
+Install from a reviewed clone with Python 3.11 or newer:
 
 ```sh
 git clone https://github.com/jon-devlapaz/tink-substrate.git
 cd tink-substrate
-mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-skill_dest="${CODEX_HOME:-$HOME/.codex}/skills/tink-substrate"
-if [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; then
-  echo "Already exists; inspect before changing: $skill_dest"
-else
-  ln -s "$PWD/skills/tink-substrate" "$skill_dest"
-fi
+python3 scripts/install_skill.py
 ```
 
-Keep this clone: the skill reads the guides and runs the dashboard from it.
-If the destination already exists, inspect it instead of replacing it.
+The installer exports committed HEAD (not uncommitted or untracked files),
+copying the skill, guides, dashboard and archive code into your Codex
+skills directory. It downloads the pinned Seed Me and tink-sdlc sources and includes
+their licenses. It refuses to replace an existing installation. The resulting
+package no longer needs this clone or your personal Tink setup.
+
 Open a new Codex session in the project you want to change and ask:
 
 > Use $tink-substrate to [describe one useful change].
+
+For a different host, use `--destination /path/to/its/skills/tink-substrate`.
+Only Codex is the current onboarding target. For updates, install to a review directory outside the host's skills directory.
+After validation, move the old installation outside that skills directory for
+backup and move the new copy to its original location. Keep only one discoverable
+`tink-substrate` skill. Run records are separate and remain unchanged.
 
 This entry point is being tested in supervised trials. It directs the agent to handle
 tool setup, a separate checkout, the work record and dashboard,

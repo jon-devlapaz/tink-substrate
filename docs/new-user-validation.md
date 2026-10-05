@@ -35,6 +35,22 @@ stopped at human acceptance, without implementing the proposed change. It used
 this machine's existing Tink library and permissions. Two Tink instruction mismatches
 required agent recovery. See [the retrospective](../runs/entry-skill/retro.md).
 
+## Copied package trial
+
+The installer now copies the runtime, guides and skill and exports the pinned
+Seed Me and SDLC sources with their licenses. Fresh GitHub downloads and an offline
+Git cache were both exercised. Tests cover independent copies, repeat-install
+refusal, existing symlinks, committed dependency exports and failed installation.
+
+On macOS, a sandbox denied access to the author's development directory, personal
+skills and Tink/Seed Me data. With an empty HOME, a limited PATH without Tink or
+routing, and network denied, the installed package opened planning, recovered the
+run in a fresh process and refused verification before human approval. A separate
+localhost-enabled check served the selected dashboard and archived synthetic run
+evidence. This was not feature delivery; no acceptance was invented. The initial
+dashboard probe used the wrong endpoint; correcting the probe to `/api/snapshot`
+passed without a product change.
+
 ## What is not established
 
 The basic path has not delivered a complete user change through PR review and

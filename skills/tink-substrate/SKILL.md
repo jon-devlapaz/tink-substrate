@@ -11,13 +11,17 @@ Do not give them a configuration checklist to perform themselves.
 
 ## Find the package and target
 
-This skill is distributed inside the Substrate repository. Resolve this SKILL.md's
-real filesystem path (including symlinks); the package root is two directories
-above its containing folder. Confirm it contains `tink_substrate/` and
-`docs/start-a-change.md`. Read that root's `docs/start-a-change.md` for the
-actual setup commands and contracts. Run Substrate commands from that root.
-If the skill was copied without its repository, explain that the complete clone
-is required; do not guess another installation.
+The directory containing this installed SKILL.md is the package root. It contains
+`tink_substrate/`, `docs/`, `.substrate-tools/` and `installation.json`. Run
+`python3 -B scripts/check_install.py` from that directory before using its tools.
+If validation fails, stop setup and report the exact error. Do not use a personal
+checkout to fill missing files. A source clone must first be installed using its
+`scripts/install_skill.py`; this skill is intended to run from the copied package.
+
+Read `docs/start-a-change.md` from the package root for setup and contracts.
+Use Python 3.11+ consistently with `-B` (or `PYTHONDONTWRITEBYTECODE=1`) to avoid
+writing bytecode into the installation. Keep work records and project changes
+outside the package.
 
 Use the user's current project as the target unless they name another. Read its
 instructions, Git status, worktrees and installed workflow before making changes.
@@ -27,8 +31,8 @@ and a short run name based on the requested change. Preserve existing work.
 ## Handle the wiring
 
 Follow the start guide yourself. Select a Python 3.11+ interpreter and use it
-consistently for setup and Substrate commands. Obtain its pinned tools only when missing; inspect
-existing copies before reuse. Keep an installed target SDLC and follow its contracts.
+consistently for setup and Substrate commands. Use the bundled pinned tools. If they are missing, report an incomplete
+installation; do not substitute a personal checkout. Keep an installed target SDLC and follow its contracts.
 Never upgrade it just to make setup match the guide. Use Seed Me's triage: a clear
 execution request can proceed to planning without an interview or fabricated seed.
 Configure the project's actual verification commands and prepare the brief under
