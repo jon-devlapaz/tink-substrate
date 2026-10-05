@@ -36,6 +36,23 @@ cd tink-substrate
 This clone path is not yet independently verified; publication and CI are pending.
 For a pre-publication evaluation, clone a reviewed local repository with its history.
 
+## Check the version
+
+From the source checkout, run:
+
+```sh
+python3 -m tink_substrate --version
+```
+
+After installing the package, you can also run:
+
+```sh
+tink-substrate --version
+```
+
+Both print `tink-substrate <package version>`, for example `tink-substrate 0.1.0`.
+No configuration or subcommand is required.
+
 ## Start one change
 
 You need Python 3.11+, Git, Bash, an agent host and the target repo's build tools.
