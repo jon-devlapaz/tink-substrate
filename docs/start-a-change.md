@@ -62,9 +62,10 @@ For source development, the installer can use `--tool-cache PATH` with local Git
 clones containing the pinned commits. It exports committed files at those pins,
 not mutable working copies. Ordinary installation fetches those commits itself.
 
-The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.18.4. Both pins are on merged public history.
-This SDLC version supplies text status; the dashboard displays it without
-inventing structured verification or approval.
+The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.20.0. Both pins are on merged public history.
+This SDLC version supplies both text status and the structured `status --json` (API 1);
+the dashboard uses structured status when the installed workspace has it, and otherwise
+displays text without inventing structured verification or approval.
 Their original licenses remain in the bundled sources. Updating either revision is a
 separate, reviewed dependency change. Network or authentication failures mean the
 tool is unavailable; do not substitute remembered instructions.
@@ -254,7 +255,7 @@ and project build tools remain external requirements.
 - **Interrupted agent:** read the saved work record, target instructions, brief,
   handoff and current `sdlc.py status <run>`. Check the checkout and PR revisions.
   Resume the existing run; never recreate approval from remembered conversation.
-- **Pinned SDLC:** text status is expected on 1.18.4. The dashboard labels it; use
+- **Pinned SDLC:** a workspace installed from this pin has 1.20.0 and structured status; an older workspace gives text status only. The dashboard labels which one it read; use
   the installed status command for its decisions. Do not upgrade just for a badge.
 - **Tink present but empty:** planning stops with `Skill ... not found in library`
   and `stage not opened`. Review the installed stage's skillset pin and use the

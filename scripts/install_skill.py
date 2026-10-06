@@ -16,7 +16,7 @@ PINS = {
     'tink-skills': ('https://github.com/jon-devlapaz/tink-skills.git',
                     '58878b5794ca04a5ec0ba62027faadabfe7ca925'),
     'tink-sdlc': ('https://github.com/jon-devlapaz/tink-sdlc.git',
-                  'f730e131557d8e3ba8a1e83b656855f7feaec585'),
+                  '3440e17960b780fa370889ad8f5876210827d7b3'),
 }
 
 
