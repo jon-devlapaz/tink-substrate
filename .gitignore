@@ -10,3 +10,6 @@ dist/
 .venv/
 
 .substrate-tools/
+
+# Local SDLC coordination locks (sdlc.py keeps one per run)
+runs/.*.lock
