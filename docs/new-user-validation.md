@@ -9,9 +9,10 @@ OS and installed interpreters; they were not a fresh-machine test.
 
 - Public clones reached Seed Me `58878b5794ca04a5ec0ba62027faadabfe7ca925`
   (1.17.1) and SDLC `328a2304b9af703dd846666757d6ffd1166df470` (1.18.2).
-  Both were on merged public history. The current SDLC pin is 1.18.4 (`f730e13`),
-  which fixes skill reading guidance and keeps the router's reason when a
-  stage-open skill pick fails; this validation predates both.
+  Both were on merged public history. The current SDLC pin is 1.20.0 (`3440e17`),
+  which adds the structured status API, a status next-action fix, and an early
+  delivery warning, on top of the 1.18.3/1.18.4 skill-reading and router-reason fixes;
+  this validation predates all of them.
 - Installer preview was non-mutating; install preserved project instructions.
 - Planning opened without optional Tink tools and reported skipped stage skills.
   An installed Tink with an empty library explicitly refused stage opening.
