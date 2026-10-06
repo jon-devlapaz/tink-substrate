@@ -120,9 +120,74 @@ tink-route --receipt runs/<slug>/skills.jsonl "<what you need>"
 
 Creation validates names and publishes a complete run atomically. Each run has one writer at a time. Busy or interrupted operations fail with the lock path. After a crash, confirm no process owns the operation before removing its lock directory, then rerun. Status is derived from receipts; do not hand-edit generated records. To check that the workspace stays legible to an agent with no memory, run the structural walk lint (see Walk lint).
 
-Use protected branches, current required CI results, independent code-owner approval, and deployment checks in your forge. When to open a PR: once the candidate is committed and verification is current (end of stage 4, and `stage <slug> 5` enforces it). Plans and design (stages 1-2) need no PR; a draft PR during build is optional and is not review. The agent may open the PR; only a human merges it. Changing code after it is open means verifying again. PR creation and review findings do not prove deployment. Retain deployed revision, deployment result, and rollback references in the deployment system. Close the run and strip only when review/rework is finished.
+Use protected branches, current required CI results, independent code-owner approval, and deployment checks in your forge. When to open a PR: once the candidate is committed and verification is current (end of stage 4, and `stage <slug> 5` enforces it). Plans and design (stages 1-2) need no PR; a draft PR during build is optional and is not review. The agent may open the PR; only a human merges it. Manual delivery: `git push -u origin <run>`, then `gh pr create --fill` (or open the PR in the forge). `stage <slug> 3` and `stage <slug> 5` warn, without refusing, when there is no `origin` remote or a GitHub `origin` has no usable `gh`; if that warning appeared, hand the owner these commands at the end instead of stopping silently. Changing code after it is open means verifying again. PR creation and review findings do not prove deployment. Retain deployed revision, deployment result, and rollback references in the deployment system. A run ends when its closure record exists: once review/rework is finished, write `runs/<run>/closure.md` (PR URL, merge revision, outcome) and commit it, then record it from the substrate with `python3 -m tink_substrate archive --checkout <path> --project <repo> --run <run> --phase closure` (see its `docs/finish-a-change.md`); strip only after that. `status` describes candidate evidence and never marks a run merged or closed.
 
 Maintenance is optional intake, not a required completion stage. Enable it only after defining metric-specific thresholds, deduplication, cooldowns, and run limits. Alerts create drafts for service-owner triage, never fabricated approvals.
+
+## Machine interface (API 1)
+
+Use the runtime installed in the selected checkout, not a global runtime. Opening a
+checkout trusts its executable code; discovery alone must not execute it.
+
+```sh
+python3 _system/scripts/sdlc.py capabilities --json
+python3 _system/scripts/sdlc.py status --json
+python3 _system/scripts/sdlc.py status example --json
+```
+
+These read-only commands emit one JSON object on stdout. Every response carries
+`protocol: "tink-sdlc"`, integer `api_version: 1`, and `workspace` (the canonical
+absolute checkout path). The API version is independent of the scaffold release.
+`capabilities` lists `status-json`, `verify`, `mark`, and `log-file`. Clients must
+check the identity, version, and capabilities before enabling actions. Extra fields
+and capabilities are additive; removing fields or changing their meaning requires
+a new API major. Unknown critical states, malformed responses, and unsupported
+majors must fail closed, never fall back to parsing the human CLI.
+
+`status --json` returns `runs`: summaries with `slug`, `profile`, `kind`,
+`verification_status`, `next_action`, `has_lock`, and `checklist_summary`
+(`total`, `passed`). An unreadable run instead has `verification_status: "invalid"`,
+`error`, and an empty summary; it does not hide valid runs.
+
+`status <run> --json` returns `run`:
+
+- `slug`, `meta` (`profile`, `kind`), and `gates` (`stage`, `status`, `blocked`).
+  Gate states are `approved`, `pending`, `stale`, or `changes-requested`.
+- `verification_status`: `blocked`, `running`, `not-run`, `current`, `stale`,
+  `failed`, or `interrupted`. `verification` is null or a normalized record with
+  `result`, `passed`, `candidate`, `log` (digest), and `error`. Only `passed: true`
+  means current evidence; receipt internals are not a client contract.
+- `checklist`: normalized items with their definition, `automatic`, `status`
+  (`pending`, `passed`, `failed`), `proof` (`automated`, `attested`), optional
+  observation `mark`, and `needs_recheck`. `checklist_state` distinguishes
+  `defined`, `empty`, `legacy`, `missing`, and `invalid`.
+- `actions.verify` and `actions.mark`: `allowed` (boolean) and `reason` (empty
+  when allowed). Verification also has `timeout_seconds`, a total execution budget
+  or null when blocked. These are UI hints, not authorization: `verify <run>` and
+  `mark <run> <item> passed|failed --evidence <text>` recheck their own rules.
+- `artifacts` (named text), `decisions` (normalized stage, nanosecond timestamp,
+  decision, reviewer, source, reason, and opaque id). Decision values are `approved`
+  or `changes-requested`; reviewer, source, and reason are strings or null when
+  historical metadata is absent. Known malformed fields invalidate that run rather
+  than being coerced into display text. Also included: `verification_config`
+  (display-only checks/policy or null), `errors`, `next_action`, and `cli_status`
+  (display-only human output). Human and machine status share one calculation.
+- `log`: `path` (checkout-relative, regular UTF-8 file), `text` (last 256 KiB,
+  decoded with replacement), and `truncated`. The advertised path stays fixed
+  for that verification invocation; the runtime may truncate/rewrite it on start.
+  Clients may tail this file but must reject escaping paths and symlinks, including
+  replacements during streaming. Do not hardcode a receipt or log directory.
+
+For `status` failures, stdout is the same envelope with `error.code` (`not-found`
+or `invalid-state`) and `error.message`, and exit status is nonzero. Usage errors
+remain normal CLI errors on stderr. Exit zero from `verify` is not enough to display
+a pass: refresh structured status. Launch verification in its own process group;
+on cancellation, disconnect, timeout, or shutdown, terminate and reap that group,
+including check descendants. Local evidence still grants no release authority.
+
+The provider contract tests execute the shipped payload on disposable light/full
+runs, including failure, stale inputs, lock contention, and log tampering. Keep
+these tests in release validation when evolving the runtime.
 
 ## Walk lint
 
