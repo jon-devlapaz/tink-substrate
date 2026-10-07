@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from . import __version__
 from .archive import archive_run
+from .prepare import prepare_run, workflow, DEFAULT_PACKAGES
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
 
@@ -37,8 +38,25 @@ def main(argv=None):
     archive.add_argument('--run', required=True)
     archive.add_argument('--phase', choices=('delivery', 'closure'), required=True)
     archive.add_argument('--root', type=Path, default=Path.home() / '.local/share/tink-substrate/archive')
+    prepare = commands.add_parser('prepare', help='refresh current checked sources for a new run, or resume its saved package')
+    prepare.add_argument('--checkout', type=Path, required=True)
+    prepare.add_argument('--run', required=True)
+    prepare.add_argument('--packages', type=Path, default=DEFAULT_PACKAGES)
+    prepare.add_argument('--profile', choices=('light', 'full'), default='light')
+    prepare.add_argument('--kind', choices=('feature', 'bug'), default='feature')
+    work = commands.add_parser('workflow', help='use one run’s saved SDLC without ambient Tink or routing')
+    work.add_argument('--checkout', type=Path, required=True)
+    work.add_argument('--run', required=True)
+    work.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     try:
+        if args.command == 'prepare':
+            record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind)
+            print(json.dumps(record, indent=2))
+            return 0
+        if args.command == 'workflow':
+            arguments = args.arguments[1:] if args.arguments[:1] == ['--'] else args.arguments
+            return workflow(args.checkout, args.run, arguments)
         if args.command == 'archive':
             print(archive_run(args.checkout, args.project, args.run, args.phase, args.root))
             return 0
@@ -87,7 +105,7 @@ def main(argv=None):
             value = snapshot(config)
         print(json.dumps(value, indent=2, ensure_ascii=False))
         return 0
-    except (OSError, ValueError, KeyError) as error:
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         print(json.dumps({'error': str(error)}), file=sys.stderr)
         return 1
 
