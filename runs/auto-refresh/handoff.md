@@ -20,3 +20,5 @@ stays editable; managed workflow files and per-run packages stay fixed.
 Decision: Stop consolidating. The observed run-boundary problems are resolved.
 Next: Deliver the verified PR. A real human-answered run after merge is the next
 observation; automatic optional Tink/router provisioning remains a separate slice.
+
+Current delivery: PR #17 is open. Local verification is current. Required forge checks and human merge remain separate. Retro: retro.md. No automatic merge or monitoring is authorized.
