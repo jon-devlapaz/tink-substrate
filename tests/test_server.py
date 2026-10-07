@@ -3,6 +3,9 @@ from datetime import datetime, timedelta, timezone
 import http.client
 import io
 import json
+from pathlib import Path
+import subprocess
+import tempfile
 import threading
 import unittest
 from unittest.mock import patch
@@ -34,6 +37,31 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(fetch.call_count, 1)
             third = json.loads(self.get('/api/snapshot?refresh=1')[1])
             self.assertEqual(third['n'], 2)
+
+    def test_record_edit_shows_after_refresh_without_restart(self):
+        # Real record and checkout, no mocks: a running server picks up an edited record on refresh.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(root / 'checkout')], check=True)
+            subprocess.run(['git', '-C', str(root / 'checkout'), '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+                            'commit', '-q', '--allow-empty', '-m', 'fixture'], check=True)
+            work = root / 'work.md'
+            record = '+++\nschema = 1\ntitle = "T"\nproject = "p"\nowner = "o"\nnext_action = "{}"\n+++\nBody.\n'
+            work.write_text(record.format('First action.'))
+            server = make_server({'schema': 1, 'work': str(work), 'checkout': str(root / 'checkout')}, 0)
+            self.addCleanup(server.server_close)
+            threading.Thread(target=server.serve_forever, daemon=True).start()
+            self.addCleanup(server.shutdown)
+            def next_action(path):
+                conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=30)
+                self.addCleanup(conn.close)
+                conn.request('GET', path)
+                return json.loads(conn.getresponse().read())['record']['next_action']
+            self.assertEqual(next_action('/api/snapshot'), 'First action.')
+            work.write_text(record.format('Second action.'))
+            self.assertEqual(next_action('/api/snapshot'), 'First action.')
+            self.assertEqual(next_action('/api/snapshot?refresh=1'), 'Second action.')
+            self.assertEqual(next_action('/api/snapshot'), 'Second action.')
 
     def test_no_arbitrary_files_or_cross_site_reads(self):
         for path in ('/../README.md', '/%2e%2e/README.md', '/seed-contract.md'):

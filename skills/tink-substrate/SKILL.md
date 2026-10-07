@@ -59,8 +59,10 @@ using the host's supported persistent process mechanism and confirm its status
 endpoint responds for the selected work. If that host cannot keep a process alive,
 state the limitation and provide the single command to restart this configured view.
 Keep records tied to the actual checkout, run and PR; update the next action when
-work pauses. Missing credentials or tools are specific obstacles to report, not
-reasons to silently skip a required check or invent success.
+work pauses. After editing the record, refresh the running view by requesting
+`/api/snapshot?refresh=1`; restart it only when the selection changes. Missing
+credentials or tools are specific obstacles to report, not reasons to silently
+skip a required check or invent success.
 
 ## Deliver and learn
 

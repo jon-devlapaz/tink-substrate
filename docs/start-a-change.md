@@ -217,6 +217,11 @@ selected SDLC runtime before trusting it. Start `serve --port PORT` on an unused
 port. Selection is read at server startup, so restart the owned server after a
 selection change. Refresh does not switch projects.
 
+Edits to the selected work record, checkout or run need no restart. The page and
+`status --url` show the last snapshot until someone presses **Refresh sources**;
+reloading the page does not re-read. An agent that edits the record can refresh
+the view itself by requesting `/api/snapshot?refresh=1` from the server.
+
 ## 6. Deliver and close
 
 Follow [Finish a change](finish-a-change.md): verify and review the PR, save the
@@ -265,6 +270,8 @@ and project build tools remain external requirements.
   required for this basic setup. Do not purchase or provision routing to begin.
 - **Wrong dashboard selection:** use an explicit per-work `--config` and restart
   the server with that same config. Refresh does not select another work record.
+- **Dashboard shows old record contents:** press **Refresh sources** or request
+  `/api/snapshot?refresh=1`. Do not restart the server for this.
 - **Dirty checkout during archive:** preserve unrelated work. Commit only the
   intended evidence in its isolated checkout; do not clean or stash someone
   else's work to make the command succeed.
