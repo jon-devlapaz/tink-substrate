@@ -93,7 +93,7 @@ def main():
         result = install(Path(__file__).resolve().parents[1], args.destination, args.tool_cache)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f'Installation failed: {error}\n')
-    print(f'Installed: {result}\nOpen a new agent session and use $tink-substrate.')
+    print(f'Installed: {result}\nOpen a new agent session and ask it to use tink-substrate.')
 
 
 if __name__ == '__main__':

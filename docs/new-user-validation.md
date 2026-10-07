@@ -54,11 +54,20 @@ evidence. This was not feature delivery; no acceptance was invented. The initial
 dashboard probe used the wrong endpoint; correcting the probe to `/api/snapshot`
 passed without a product change.
 
+## Claude Code dogfood run
+
+The package was installed with `--destination ~/.claude/skills/tink-substrate`
+and used from Claude Code on a small CLI project. Planning, build and review ran
+as Agent-tool subagents. The run reached an open PR with current verification and
+an advisory review. A coordinator agent stood in for the user: Seed Me recorded
+its answers as `simulated`, no seed was confirmed, and no human approved the brief.
+The run's retro and dogfood log stay with that project's run evidence.
+
 ## What is not established
 
 The basic path has not delivered a complete user change through PR review and
-closure. A Seed Me interview and the full Codex Desktop handoff still require a
-real user trial. The historical skill-equipped trials do not prove equivalent
+closure. A human-answered Seed Me interview and the full Codex Desktop handoff
+still require a real user trial. The historical skill-equipped trials do not prove equivalent
 outcomes with optional skills absent.
 
 The public GitHub clone succeeded after publication. The initial GitHub CI run
