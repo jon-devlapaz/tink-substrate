@@ -33,7 +33,8 @@ Speak simply and concisely.
 
 ## Examples and real work
 
-`tests/fixtures/` contains synthetic test data, never real approvals or instructions.
+The source repository's `tests/fixtures/` contains synthetic test data, never real
+approvals or instructions.
 Keep user work records outside the installed package. Do not treat examples or
 past observations as current authority for a new run.
 
