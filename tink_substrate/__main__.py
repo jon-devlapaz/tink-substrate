@@ -44,6 +44,8 @@ def main(argv=None):
     prepare.add_argument('--packages', type=Path, default=DEFAULT_PACKAGES)
     prepare.add_argument('--profile', choices=('light', 'full'), default='light')
     prepare.add_argument('--kind', choices=('feature', 'bug'), default='feature')
+    prepare.add_argument('--upgrade-sdlc', action='store_true',
+                         help="replace the target's different installed tink-sdlc; only when the user asks")
     work = commands.add_parser('workflow', help='use one run’s saved SDLC without ambient Tink or routing')
     work.add_argument('--checkout', type=Path, required=True)
     work.add_argument('--run', required=True)
@@ -51,7 +53,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command == 'prepare':
-            record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind)
+            record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind, args.upgrade_sdlc)
             print(json.dumps(record, indent=2))
             return 0
         if args.command == 'workflow':
@@ -105,7 +107,7 @@ def main(argv=None):
             value = snapshot(config)
         print(json.dumps(value, indent=2, ensure_ascii=False))
         return 0
-    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+    except (OSError, ValueError, KeyError) as error:
         print(json.dumps({'error': str(error)}), file=sys.stderr)
         return 1
 

@@ -277,7 +277,7 @@ not watch GitHub or trigger them in the background.
 Run the installer first. Give your agent the absolute path to the installed
 skill directory and this request (replace `/path/to/tink-substrate` with that path):
 
-> Read /path/to/tink-substrate/AGENTS.md and
+> Read /path/to/tink-substrate/SKILL.md and
 > /path/to/tink-substrate/docs/start-a-change.md. Use this workflow
 > for [repo path] to accomplish [outcome]. Inspect existing instructions, worktrees
 > and installed SDLC first. Preserve active work. Take the change through the

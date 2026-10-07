@@ -4,7 +4,6 @@ import hashlib
 import io
 import json
 import os
-import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -19,19 +18,6 @@ PINS = {
                   '3440e17960b780fa370889ad8f5876210827d7b3'),
 }
 
-
-# This repository's own SDLC workspace writes these blocks into AGENTS.md. They point
-# at _system/, stages/ and _shared/, which the package does not contain.
-WORKSPACE_BLOCKS = re.compile(r'\n*<!-- AI-Native SDLC Router -->.*?<!-- End AI-Native SDLC Router -->\n?'
-                              r'|\n*<!-- tink:rules begin[^\n]*?-->.*?<!-- tink:rules end -->\n?', re.S)
-
-
-def package_instructions(text):
-    """Return AGENTS.md without the source workspace's router and compiled rules."""
-    result = WORKSPACE_BLOCKS.sub('', text)
-    if 'SDLC Router' in result or 'tink:rules' in result:
-        raise ValueError('AGENTS.md has an unmatched SDLC router or tink:rules marker')
-    return result.rstrip('\n') + '\n'
 
 
 def export_tree(repo, revision, target, paths):
@@ -63,11 +49,9 @@ def install(source, destination, tool_cache=None, pins=None):
         staging.mkdir()
         revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
         export_tree(source, revision, staging, [
-            'tink_substrate', 'docs', 'LICENSE', 'AGENTS.md',
+            'tink_substrate', 'docs', 'LICENSE',
             'skills/tink-substrate/SKILL.md', 'scripts/check_install.py'])
         shutil.move(staging / 'skills/tink-substrate/SKILL.md', staging / 'SKILL.md')
-        agents = staging / 'AGENTS.md'
-        agents.write_text(package_instructions(agents.read_text()))
         shutil.rmtree(staging / 'skills')
         source_revision = revision
         for name, (url, revision) in pins.items():
