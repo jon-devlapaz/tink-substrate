@@ -1,11 +1,13 @@
 {
+  "candidate": "da02d1005e2ca9d60949cdaf2dcfe2a1ea917436",
   "components": {
     "tink-substrate": {
       "url": "https://github.com/jon-devlapaz/tink-substrate.git",
       "workflow": "ci.yml",
-      "revision": "015810087ba2032e11c2b38d0f654a1e58b3e58d",
-      "ci_run": 37568163436,
-      "version": "0.1.0"
+      "revision": "da02d1005e2ca9d60949cdaf2dcfe2a1ea917436",
+      "ci_run": null,
+      "candidate": true,
+      "version": "0.2.0"
     },
     "tink-skills": {
       "url": "https://github.com/jon-devlapaz/tink-skills.git",
@@ -32,5 +34,11 @@
     ],
     "limits": "Synthetic compatibility check; no interview or feature delivery."
   },
-  "limits": "Live source compatibility only. This does not exercise the candidate entry skill after merge."
+  "checks": [
+    "real-sdlc-1.21-install",
+    "copied-cli-offline-resume",
+    "real-stage-1-with-saved-prompt",
+    "copied-cli-blocked-status"
+  ],
+  "limits": "Synthetic target; candidate source selected explicitly for this probe; no CI bypass in production, human approval or feature delivery."
 }

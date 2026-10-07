@@ -73,7 +73,7 @@ After installing the package, you can also run:
 tink-substrate --version
 ```
 
-Both print `tink-substrate <package version>`, for example `tink-substrate 0.1.0`.
+Both print `tink-substrate <package version>`, for example `tink-substrate 0.2.0`.
 No configuration or subcommand is required.
 
 ## What works today

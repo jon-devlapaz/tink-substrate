@@ -7,3 +7,16 @@ Futures: Keep package assembly in one owner so dependency changes do not require
 Decision: Proceed with the approved pre-run refresh behavior.
 Next: Implement, verify, independently review, commit evidence, push PR and archive.
 Skills: Features and Futures bounded the slice; principle-build-the-lever requires rerunnable checks; unslop guides user-facing text.
+
+Pause after checked slice:
+Evidence: 18 preparation boundary tests pass, including the review regressions.
+Live-source compatibility passed for Seed Me 2.0.0 and SDLC 1.21.0. A copied candidate
+with those real dependency exports created and resumed a synthetic run offline,
+opened stage 1 with the prepared prompt, and kept verification blocked.
+Learning: Run identity must survive stage sessions, not merely initial setup.
+Futures: One package builder preserves the explicit pinned installer while allowing
+fresh dependency selection at one boundary. Project-owned check configuration
+stays editable; managed workflow files and per-run packages stay fixed.
+Decision: Stop consolidating. The observed run-boundary problems are resolved.
+Next: Deliver the verified PR. A real human-answered run after merge is the next
+observation; automatic optional Tink/router provisioning remains a separate slice.
