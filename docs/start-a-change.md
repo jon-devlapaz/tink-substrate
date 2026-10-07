@@ -90,7 +90,11 @@ triage calls for one. The target's decision and verification rules still apply.
 
 The skill owns the interview, session, viewer, and seed confirmation. Its helpers
 are runnable with Python; its session records normally live under
-`~/.local/share/seed-me/sessions/`. Keep the returned path. Do not create a confirmed
+`~/.local/share/seed-me/sessions/`. Seed Me saves the confirmed seed to the
+repository root unless another destination is agreed with the user. Here, agree
+a path outside every checkout, such as the session's directory: the main
+checkout holds other work and the isolated checkout may not exist yet. Keep the
+returned path. Do not create a confirmed
 seed from an example or infer confirmation from a saved file's name.
 
 Completion here means the human has confirmed the displayed seed and its file is
@@ -154,6 +158,10 @@ python3 _system/scripts/sdlc.py new example-change --profile light --kind featur
 python3 _system/scripts/sdlc.py stage example-change 1 --here --seed-contract /absolute/path/to/confirmed/seed-contract.md
 ```
 
+With `--seed-contract`, the launcher copies the seed to `runs/<run>/seed-contract.md`
+and binds that copy's hash to later approvals and verification. Do not copy or
+edit it by hand.
+
 The coordinator performs these launcher actions. Before starting the planning
 session, save the actual user request, constraints and labelled defaults in
 `runs/<run>/handoff.md`. Link any confirmed seed; omit the link when there is none.
@@ -201,10 +209,10 @@ handoff = "runs/example-change/handoff.md"
 +++
 ```
 
-If a confirmed seed exists, copy it for the dashboard from its external session
-into `runs/<run>/seed-contract.md` in the target checkout, without rewriting its
-content or confirmation details. Keep the original session. Dashboard artifact
-paths are relative to the target checkout and cannot point outside it.
+If a confirmed seed exists, stage 1 has already copied it to
+`runs/<run>/seed-contract.md` in the target checkout. Keep the original session.
+Dashboard artifact paths are relative to the target checkout and cannot point
+outside it.
 
 Add `seed = "runs/example-change/seed-contract.md"` only when that file actually
 exists and represents the confirmed seed. Never copy a historical decision into a
