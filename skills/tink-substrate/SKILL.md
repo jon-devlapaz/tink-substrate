@@ -37,7 +37,9 @@ Preserve existing work. A preparation failure stops setup with its exact reason.
 
 Follow the start guide yourself. Select a Python 3.11+ interpreter and use it
 consistently. For prepared runs, use the saved package's workflow wrapper for SDLC
-commands. Use Seed Me's triage: a clear execution request can proceed to planning
+commands. Never upgrade a target's installed SDLC unless the user asks;
+if preparation stops on a different installed version, report it and pass
+`--upgrade-sdlc` only on the user's request. Use Seed Me's triage: a clear execution request can proceed to planning
 without an interview or fabricated seed.
 If someone answers or approves for the user, follow the start guide's rules for a
 relayed user or a stand-in. A stand-in's answers stay `simulated`, and its

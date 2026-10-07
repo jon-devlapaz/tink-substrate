@@ -118,7 +118,7 @@ if not a.check:
             self.prepare()
         commit(self.checkout)
         (self.checkout / 'runs/trial').mkdir(parents=True)
-        with self.assertRaisesRegex(ValueError, 'existing run'):
+        with self.assertRaisesRegex(ValueError, 'not prepared in this checkout'):
             self.prepare()
 
     def test_failed_ci_and_smoke_leave_target_untouched(self):
@@ -131,13 +131,43 @@ if not a.check:
         self.assertEqual(git(self.checkout, 'status', '--porcelain'), '')
         self.assertFalse((self.checkout / 'runs').exists())
 
+    def test_committed_record_has_no_machine_paths_and_must_match(self):
+        record = self.prepare()
+        committed = (self.checkout / 'runs/trial/tools.json').read_text()
+        for value in (str(self.checkout), record['package'], str(self.root)):
+            self.assertNotIn(value, committed)
+        self.assertNotIn('substrate-runs', git(self.checkout, 'status', '--porcelain', '--untracked-files=all'))
+        data = json.loads(committed); data['components']['tink-sdlc']['revision'] = 'c' * 40
+        (self.checkout / 'runs/trial/tools.json').write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            prepare_run(self.checkout, 'trial', self.root / 'packages')
+
+    def test_different_installed_sdlc_needs_explicit_upgrade(self):
+        shutil.copytree(ROOT / '_system', self.checkout / '_system')
+        scaffold = self.checkout / '_system/scaffold.json'
+        scaffold.write_text(json.dumps({**json.loads(scaffold.read_text()), 'version': '1.0.0'}))
+        commit(self.checkout)
+        with self.assertRaisesRegex(ValueError, '--upgrade-sdlc'):
+            self.prepare()
+        self.assertEqual(git(self.checkout, 'status', '--porcelain'), '')
+        self.assertEqual(list((self.root / 'packages').iterdir()), [])
+        with patch('tink_substrate.prepare.resolve_sources', return_value=self.sources), \
+             patch('tink_substrate.prepare.fetch_sources', return_value=self.cache):
+            self.assertEqual(prepare_run(self.checkout, 'trial', self.root / 'packages', upgrade_sdlc=True)['run'], 'trial')
+
+    def test_failed_preparation_discards_its_package(self):
+        with patch('tink_substrate.prepare.smoke_package', side_effect=ValueError('incompatible')):
+            with self.assertRaisesRegex(ValueError, 'incompatible'):
+                self.prepare()
+        self.assertEqual(list((self.root / 'packages').iterdir()), [])
+
     def test_package_storage_inside_target_refused(self):
         with self.assertRaisesRegex(ValueError, 'outside'):
             prepare_run(self.checkout, 'trial', self.checkout / 'packages')
 
     def test_record_from_other_checkout_and_symlink_refused(self):
         self.prepare()
-        path = self.checkout / 'runs/trial/tools.json'
+        path = Path(git(self.checkout, 'rev-parse', '--absolute-git-dir')) / 'substrate-runs/trial.json'
         data = json.loads(path.read_text()); data['checkout'] = str(self.root)
         path.write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError, 'identity'):

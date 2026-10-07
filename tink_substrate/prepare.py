@@ -163,6 +163,16 @@ def workflow_digest(checkout):
     return hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
 
 
+def local_records(checkout):
+    """Machine-specific bindings live in this checkout's Git directory, never in commits."""
+    return Path(git(checkout, 'rev-parse', '--absolute-git-dir')) / 'substrate-runs'
+
+
+def portable(record):
+    """The committed run evidence: versions and checks, without machine paths."""
+    return {key: record[key] for key in ('schema', 'run', 'components', 'integrations', 'checked_at', 'compatibility')}
+
+
 def validate_record(checkout, run, record):
     if (record.get('schema') != 1 or record.get('checkout') != str(checkout)
             or record.get('run') != run or record.get('integrations') != 'bundled-only'):
@@ -177,9 +187,21 @@ def validate_record(checkout, run, record):
         actual = installation['source']['revision'] if name == 'tink-substrate' else installation['dependencies'][name]['revision']
         if component['url'] != spec['url'] or component['revision'] != actual:
             raise ValueError('Run component identity does not match installation')
+    committed = checkout / 'runs' / run / 'tools.json'
+    if committed.is_symlink() or not committed.is_file() or json.loads(committed.read_text()) != portable(record):
+        raise ValueError('Committed runs/<run>/tools.json does not match this checkout\'s run tools identity')
     if workflow_digest(checkout) != record['workflow_digest']:
         raise ValueError('Run workflow changed; restore its saved scaffold before resuming')
     return record
+
+
+def load_record(checkout, run):
+    path = local_records(checkout) / f'{run}.json'
+    if path.is_symlink():
+        raise ValueError('Run tools record must not be a symlink')
+    if not path.is_file():
+        return None
+    return validate_record(checkout, run, json.loads(path.read_text()))
 
 
 @contextlib.contextmanager
@@ -194,7 +216,7 @@ def preparation_lock(checkout):
         yield
 
 
-def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind='feature'):
+def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind='feature', upgrade_sdlc=False):
     checkout = Path(checkout).resolve()
     if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', run):
         raise ValueError('Invalid run name')
@@ -207,50 +229,63 @@ def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind=
         raise ValueError('Package storage must be outside the target checkout')
     with preparation_lock(checkout):
         path = checkout / 'runs' / run
-        receipt = path / 'tools.json'
-        if path.is_symlink() or (checkout / 'runs').is_symlink() or receipt.is_symlink():
+        if path.is_symlink() or (checkout / 'runs').is_symlink():
             raise ValueError('Run paths must not be symlinks')
-        if receipt.exists():
-            return validate_record(checkout, run, json.loads(receipt.read_text()))
+        record = load_record(checkout, run)
+        if record:
+            return record
         if path.exists():
-            raise ValueError('Cannot refresh an existing run without its tools record; leave it unchanged')
-        for existing in (checkout / 'runs').glob('*/tools.json'):
-            if existing.is_symlink() or existing.parent.is_symlink():
-                raise ValueError('Existing run tools must not be symlinks')
-            saved = json.loads(existing.read_text())
-            if saved.get('checkout') == str(checkout):
-                raise ValueError('This checkout holds another prepared run; select another isolated checkout')
+            raise ValueError('This run was not prepared in this checkout; resume it where it was prepared, '
+                             'or continue under its existing contracts')
+        records = local_records(checkout)
+        if records.is_dir() and any(records.glob('*.json')):
+            raise ValueError('This checkout holds another prepared run; select another isolated checkout')
         if git(checkout, 'status', '--porcelain', '--untracked-files=all'):
             raise ValueError('New-run preparation needs a clean isolated checkout')
         verification = checkout / '_system/verification.json'
         if verification.exists() and json.loads(verification.read_text()).get('require_tink'):
             raise ValueError('This target requires Tink; bundled-only preparation cannot satisfy that policy')
         sources = resolve_sources()
-        with tempfile.TemporaryDirectory(prefix='substrate-fetch-') as directory:
-            cache = fetch_sources(sources, Path(directory))
-            package = packages / uuid.uuid4().hex
-            pins = {name: (spec['url'], spec['revision']) for name, spec in sources.items() if name != 'tink-substrate'}
-            install(cache / 'tink-substrate', package, cache, pins=pins)
-        smoke = smoke_package(package)
-        components = versions(package, sources)
-        current = resolve_sources()
-        if any(current[name]['revision'] != value['revision'] for name, value in sources.items()):
-            raise ValueError('Upstream main changed during preparation; retry before starting the run')
-        initializer = package / '.substrate-tools/tink-sdlc/scripts/init.py'
-        upgrade = ['--upgrade'] if (checkout / '_system/scaffold.json').exists() else []
-        with basic_environment() as env:
-            command([sys.executable, '-B', initializer, checkout, *upgrade, '--check'], env=env)
-            command([sys.executable, '-B', initializer, checkout, *upgrade], env=env)
-            command([sys.executable, '-B', checkout / '_system/scripts/sdlc.py', 'new', run,
-                     '--profile', profile, '--kind', kind], env=env)
+        package = packages / uuid.uuid4().hex
+        try:
+            with tempfile.TemporaryDirectory(prefix='substrate-fetch-') as directory:
+                cache = fetch_sources(sources, Path(directory))
+                pins = {name: (spec['url'], spec['revision']) for name, spec in sources.items() if name != 'tink-substrate'}
+                install(cache / 'tink-substrate', package, cache, pins=pins)
+            smoke = smoke_package(package)
+            components = versions(package, sources)
+            current = resolve_sources()
+            if any(current[name]['revision'] != value['revision'] for name, value in sources.items()):
+                raise ValueError('Upstream main changed during preparation; retry before starting the run')
+            initializer = package / '.substrate-tools/tink-sdlc/scripts/init.py'
+            scaffold = checkout / '_system/scaffold.json'
+            installed = json.loads(scaffold.read_text()).get('version') if scaffold.exists() else None
+            bundled = components['tink-sdlc']['version']
+            if installed and installed != bundled and not upgrade_sdlc:
+                raise ValueError(f'Target has tink-sdlc {installed}; this run would use {bundled}. '
+                                 'Upgrade only when the user asks: rerun with --upgrade-sdlc')
+            with basic_environment() as env:
+                upgrade = ['--upgrade'] if installed else []
+                command([sys.executable, '-B', initializer, checkout, *upgrade, '--check'], env=env)
+                if installed != bundled:
+                    command([sys.executable, '-B', initializer, checkout, *upgrade], env=env)
+                command([sys.executable, '-B', checkout / '_system/scripts/sdlc.py', 'new', run,
+                         '--profile', profile, '--kind', kind], env=env)
+        except BaseException:
+            # Only an unprepared target can reach here; keep it, discard the unused package.
+            if package.exists() and not path.exists():
+                shutil.rmtree(package)
+            raise
         record = {'schema': 1, 'checkout': str(checkout), 'run': run, 'package': str(package),
                   'components': components, 'integrations': 'bundled-only',
                   'checked_at': datetime.now(timezone.utc).isoformat(), 'compatibility': smoke,
                   'workflow_digest': workflow_digest(checkout)}
-        # A crash before this final receipt cannot be mistaken for a prepared run.
-        temporary = path / '.tools.json.tmp'
+        (path / 'tools.json').write_text(json.dumps(portable(record), indent=2) + '\n')
+        records.mkdir(exist_ok=True)
+        # A crash before this final local record cannot be mistaken for a prepared run.
+        temporary = records / f'.{run}.json.tmp'
         temporary.write_text(json.dumps(record, indent=2) + '\n')
-        temporary.replace(receipt)
+        temporary.replace(records / f'{run}.json')
         return record
 
 
@@ -258,10 +293,9 @@ def workflow(checkout, run, arguments):
     checkout = Path(checkout).resolve()
     if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', run):
         raise ValueError('Invalid run name')
-    path = checkout / 'runs' / run / 'tools.json'
-    if path.is_symlink() or path.parent.is_symlink() or path.parent.parent.is_symlink():
-        raise ValueError('Run paths must not be symlinks')
-    record = validate_record(checkout, run, json.loads(path.read_text()))
+    record = load_record(checkout, run)
+    if not record:
+        raise ValueError('This run has no tools record in this checkout; use prepare for new runs')
     commands = {'status', 'capabilities', 'verify', 'mark', 'decide', 'stage', 'pull', 'walk', 'lock-tests'}
     if not arguments or arguments[0] not in commands:
         raise ValueError('Use prepare for new runs; optional global integrations are disabled')
@@ -289,7 +323,7 @@ def workflow(checkout, run, arguments):
                              '--checkout', str(checkout), '--run', run, '--'])
         print(f'Prepared stage session prompt (start a new session in {checkout}):', flush=True)
         print(f'Perform stage {arguments[2]} for run {run}. Read its stages/ CONTEXT.md, '
-              f'{checkout}/runs/{run}/handoff.md, {path}, and {package}/docs/automatic-tools.md. '
+              f'{checkout}/runs/{run}/handoff.md, {checkout}/runs/{run}/tools.json, and {package}/docs/automatic-tools.md. '
               f'Use {package} as the package directory and run SDLC commands through {prefix}. '
               'This run is bundled-only; optional global Tink and tink-route are disabled. '
               'Use the stage outputs and human gates; preparation is not approval.', flush=True)

@@ -12,8 +12,11 @@ full workflow. The command creates the SDLC run, so do not run `sdlc.py new` aga
 Preparation checks current `main` in the fixed public Substrate, tink-skills and
 tink-sdlc repositories. Each commit needs its designated CI workflow to have
 completed successfully. It exports exact committed files, checks the copied
-combination in a disposable project, checks main again, then installs or upgrades
-SDLC in the selected target and creates the run. A moving main, pending or failed
+combination in a disposable project, checks main again, then installs SDLC in
+the selected target and creates the run. If the target already has a different
+tink-sdlc version, preparation stops: it upgrades only with `--upgrade-sdlc`, which
+you pass only when the user asks for that upgrade. The upgrade then rides in this
+run's PR. A moving main, pending or failed
 CI, network failure or incompatible package stops preparation. There is no
 fallback to an older success.
 
@@ -21,8 +24,11 @@ Read the returned JSON. It names the package directory and the versions, commits
 CI runs and compatibility checks. Use that directory as the package root for
 Seed Me, dashboard and archive commands. Read its current `SKILL.md` and guides.
 The global installed skill remains the bootstrap entry; preparation does not
-replace it or other installations. `runs/<run>/tools.json` keeps the same record.
-Commit that record and scaffold setup before implementation.
+replace it or other installations. `runs/<run>/tools.json` keeps the versions,
+CI runs and checks without machine paths; commit it with the scaffold setup before
+implementation. The checkout path and package directory stay local, in the
+checkout's own Git directory (`substrate-runs/<run>.json`), so they never reach
+the target repository. Resume needs both, and they must agree.
 
 ## Use and resume the saved tools
 
@@ -67,7 +73,7 @@ prepare refuses to update it. Do not manufacture a tools record for that run.
   exercise SDLC API 1 and the dashboard's blocked state, and confirm that
   verification refuses an unapproved synthetic run. They do not prove interview
   quality or completed user work. Hashes are local integrity evidence, not signatures.
-- A crash before `tools.json` is saved leaves an unprepared run. Preserve the
+- A crash before the local run record is saved leaves an unprepared run. Preserve the
   checkout and package for inspection. A retry refuses that run rather than
   guessing its versions or replacing evidence. Preparation locks one checkout
   against concurrent preparation; it does not coordinate unrelated agent edits.
