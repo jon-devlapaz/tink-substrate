@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tink_substrate.package import PINS, export_tree, package_instructions, install as build_package
+from tink_substrate.package import PINS, install as build_package
 
 
 def install(source, destination, tool_cache=None):
