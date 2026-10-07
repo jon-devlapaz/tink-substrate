@@ -35,6 +35,9 @@ consistently for setup and Substrate commands. Use the bundled pinned tools. If 
 installation; do not substitute a personal checkout. Keep an installed target SDLC and follow its contracts.
 Never upgrade it just to make setup match the guide. Use Seed Me's triage: a clear
 execution request can proceed to planning without an interview or fabricated seed.
+If someone answers or approves for the user, follow the start guide's rules for a
+relayed user or a stand-in. A stand-in's answers stay `simulated`, and its
+approvals are not human approval.
 Configure the project's actual verification commands and prepare the brief under
 its installed SDLC. Present the finished brief for required human acceptance.
 Continue authorized setup and planning without asking about routine path choices.
