@@ -11,7 +11,7 @@ test_light_review_keeps_brief_and_checklist_together (test_artifacts.ArtifactTes
 test_unsafe_large_and_missing_linked_documents_are_visible_errors (test_artifacts.ArtifactTests.test_unsafe_large_and_missing_linked_documents_are_visible_errors) ... ok
 test_saved_selection_explains_restart_and_preserves_config_path (test_cli.SelectionTests.test_saved_selection_explains_restart_and_preserves_config_path) ... ok
 test_existing_symlink_is_not_followed (test_install_skill.InstallSkillTests.test_existing_symlink_is_not_followed) ... ok
-test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpudoec2u5/missing': No such file or directory
+test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpw2ilkfmt/missing': No such file or directory
 ok
 test_independent_copy_and_repeat_preserves_destination (test_install_skill.InstallSkillTests.test_independent_copy_and_repeat_preserves_destination) ... ok
 test_installed_agents_md_names_only_packaged_paths (test_install_skill.InstallSkillTests.test_installed_agents_md_names_only_packaged_paths) ... ok
@@ -27,7 +27,7 @@ test_dirty_new_target_and_existing_unrecorded_run_refused (test_prepare.PrepareT
 test_failed_ci_and_smoke_leave_target_untouched (test_prepare.PrepareTests.test_failed_ci_and_smoke_leave_target_untouched) ... ok
 test_integrity_failure_refuses_resume (test_prepare.PrepareTests.test_integrity_failure_refuses_resume) ... ok
 test_main_moving_during_smoke_refuses_start (test_prepare.PrepareTests.test_main_moving_during_smoke_refuses_start) ... ok
-test_new_run_records_exact_objects_and_resume_is_offline (test_prepare.PrepareTests.test_new_run_records_exact_objects_and_resume_is_offline) ... {"protocol": "tink-sdlc", "api_version": 1, "workspace": "/private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmp4j14en2b/target", "run": {"slug": "trial", "meta": {"profile": "light", "kind": "feature"}, "gates": [{"stage": 3, "status": "pending", "blocked": false}], "verification_status": "blocked", "has_lock": false, "verification": null, "checklist": [], "checklist_state": "empty", "next_action": "revise/review stage 3; record the human decision.", "errors": [], "verification_config": {"require_tink": false, "checks": [{"argv": ["python3", "-B", "-c", "import unittest; s=unittest.defaultTestLoader.discover('tests'); assert s.countTestCases() > 0, 'No tests discovered'; r=unittest.TextTestRunner(verbosity=2).run(s); raise SystemExit(not r.wasSuccessful())"], "timeout_seconds": 180}]}, "actions": {"verify": {"allowed": false, "reason": "revise/review stage 3; record the human decision.", "timeout_seconds": null}, "mark": {"allowed": false, "reason": "revise/review stage 3; record the human decision."}}, "artifacts": {"brief": "# Change brief\n\n## Problem and outcome\n\n## Acceptance criteria\n\n## Approach\n\nThe implementation checklist lives in `checklist.json` (definitions with id/description/verify) and is marked only with `sdlc.py mark`. Give an item a `check` (argv + timeout) whenever an automated proof exists; `verify` then runs it and no mark is needed.\n\n## Risks and verification\n"}, "decisions": [], "log": {"path": "runs/trial/04-test/output/test-log.md", "text": "", "truncated": false}, "cli_status": "Stage 3: pending\nNext: revise/review stage 3; record the human decision.\nAfter human review, fill in this command from the scaffold root (DECISION: approved or changes-requested):\n  python3 _system/scripts/sdlc.py decide trial 3 DECISION --reviewer 'REVIEWER' --source 'SOURCE' --reason 'REASON'\nChecklist: no items defined\nVerification: not run (implementation may be pending; a text log is not passing evidence)\nDeployment: not inferred from local review files; consult the deployment system."}}
+test_new_run_records_exact_objects_and_resume_is_offline (test_prepare.PrepareTests.test_new_run_records_exact_objects_and_resume_is_offline) ... {"protocol": "tink-sdlc", "api_version": 1, "workspace": "/private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmps84pdd7y/target", "run": {"slug": "trial", "meta": {"profile": "light", "kind": "feature"}, "gates": [{"stage": 3, "status": "pending", "blocked": false}], "verification_status": "blocked", "has_lock": false, "verification": null, "checklist": [], "checklist_state": "empty", "next_action": "revise/review stage 3; record the human decision.", "errors": [], "verification_config": {"require_tink": false, "checks": [{"argv": ["python3", "-B", "-c", "import unittest; s=unittest.defaultTestLoader.discover('tests'); assert s.countTestCases() > 0, 'No tests discovered'; r=unittest.TextTestRunner(verbosity=2).run(s); raise SystemExit(not r.wasSuccessful())"], "timeout_seconds": 180}]}, "actions": {"verify": {"allowed": false, "reason": "revise/review stage 3; record the human decision.", "timeout_seconds": null}, "mark": {"allowed": false, "reason": "revise/review stage 3; record the human decision."}}, "artifacts": {"brief": "# Change brief\n\n## Problem and outcome\n\n## Acceptance criteria\n\n## Approach\n\nThe implementation checklist lives in `checklist.json` (definitions with id/description/verify) and is marked only with `sdlc.py mark`. Give an item a `check` (argv + timeout) whenever an automated proof exists; `verify` then runs it and no mark is needed.\n\n## Risks and verification\n"}, "decisions": [], "log": {"path": "runs/trial/04-test/output/test-log.md", "text": "", "truncated": false}, "cli_status": "Stage 3: pending\nNext: revise/review stage 3; record the human decision.\nAfter human review, fill in this command from the scaffold root (DECISION: approved or changes-requested):\n  python3 _system/scripts/sdlc.py decide trial 3 DECISION --reviewer 'REVIEWER' --source 'SOURCE' --reason 'REASON'\nChecklist: no items defined\nVerification: not run (implementation may be pending; a text log is not passing evidence)\nDeployment: not inferred from local review files; consult the deployment system."}}
 ok
 test_package_internal_symlink_is_refused_on_resume (test_prepare.PrepareTests.test_package_internal_symlink_is_refused_on_resume) ... ok
 test_package_storage_inside_target_refused (test_prepare.PrepareTests.test_package_storage_inside_target_refused) ... ok
@@ -35,7 +35,7 @@ test_record_from_other_checkout_and_symlink_refused (test_prepare.PrepareTests.t
 test_second_run_cannot_replace_first_runs_workflow (test_prepare.PrepareTests.test_second_run_cannot_replace_first_runs_workflow) ... ok
 test_stage_launch_stays_in_checkout_and_carries_saved_tool_instructions (test_prepare.PrepareTests.test_stage_launch_stays_in_checkout_and_carries_saved_tool_instructions) ... skills: skipped (tink not installed); the agent will run without stage disciplines
 warning: PR delivery may not be possible from this checkout: there is no `origin` remote. If this is still true at the end, hand the owner these commands instead of stopping silently: git push -u origin trial; gh pr create --fill
-Checkout: /private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpa8_pbwsl/target
+Checkout: /private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpjo_0w113/target
 Launch prompt (start a NEW session there):
 Begin stage 3 (build) of SDLC run `trial`.
 ok
@@ -82,7 +82,7 @@ test_mount_hints_use_json (test_workspace_guidance.WorkspaceGuidanceTests.test_m
 test_workspace_files_present (test_workspace_guidance.WorkspaceGuidanceTests.test_workspace_files_present) ... ok
 
 ----------------------------------------------------------------------
-Ran 72 tests in 19.744s
+Ran 72 tests in 18.888s
 
 OK
 
@@ -95,7 +95,7 @@ test_dirty_new_target_and_existing_unrecorded_run_refused (test_prepare.PrepareT
 test_failed_ci_and_smoke_leave_target_untouched (test_prepare.PrepareTests.test_failed_ci_and_smoke_leave_target_untouched) ... ok
 test_integrity_failure_refuses_resume (test_prepare.PrepareTests.test_integrity_failure_refuses_resume) ... ok
 test_main_moving_during_smoke_refuses_start (test_prepare.PrepareTests.test_main_moving_during_smoke_refuses_start) ... ok
-test_new_run_records_exact_objects_and_resume_is_offline (test_prepare.PrepareTests.test_new_run_records_exact_objects_and_resume_is_offline) ... {"protocol": "tink-sdlc", "api_version": 1, "workspace": "/private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpfs1mh_q5/target", "run": {"slug": "trial", "meta": {"profile": "light", "kind": "feature"}, "gates": [{"stage": 3, "status": "pending", "blocked": false}], "verification_status": "blocked", "has_lock": false, "verification": null, "checklist": [], "checklist_state": "empty", "next_action": "revise/review stage 3; record the human decision.", "errors": [], "verification_config": {"require_tink": false, "checks": [{"argv": ["python3", "-B", "-c", "import unittest; s=unittest.defaultTestLoader.discover('tests'); assert s.countTestCases() > 0, 'No tests discovered'; r=unittest.TextTestRunner(verbosity=2).run(s); raise SystemExit(not r.wasSuccessful())"], "timeout_seconds": 180}]}, "actions": {"verify": {"allowed": false, "reason": "revise/review stage 3; record the human decision.", "timeout_seconds": null}, "mark": {"allowed": false, "reason": "revise/review stage 3; record the human decision."}}, "artifacts": {"brief": "# Change brief\n\n## Problem and outcome\n\n## Acceptance criteria\n\n## Approach\n\nThe implementation checklist lives in `checklist.json` (definitions with id/description/verify) and is marked only with `sdlc.py mark`. Give an item a `check` (argv + timeout) whenever an automated proof exists; `verify` then runs it and no mark is needed.\n\n## Risks and verification\n"}, "decisions": [], "log": {"path": "runs/trial/04-test/output/test-log.md", "text": "", "truncated": false}, "cli_status": "Stage 3: pending\nNext: revise/review stage 3; record the human decision.\nAfter human review, fill in this command from the scaffold root (DECISION: approved or changes-requested):\n  python3 _system/scripts/sdlc.py decide trial 3 DECISION --reviewer 'REVIEWER' --source 'SOURCE' --reason 'REASON'\nChecklist: no items defined\nVerification: not run (implementation may be pending; a text log is not passing evidence)\nDeployment: not inferred from local review files; consult the deployment system."}}
+test_new_run_records_exact_objects_and_resume_is_offline (test_prepare.PrepareTests.test_new_run_records_exact_objects_and_resume_is_offline) ... {"protocol": "tink-sdlc", "api_version": 1, "workspace": "/private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpywquoube/target", "run": {"slug": "trial", "meta": {"profile": "light", "kind": "feature"}, "gates": [{"stage": 3, "status": "pending", "blocked": false}], "verification_status": "blocked", "has_lock": false, "verification": null, "checklist": [], "checklist_state": "empty", "next_action": "revise/review stage 3; record the human decision.", "errors": [], "verification_config": {"require_tink": false, "checks": [{"argv": ["python3", "-B", "-c", "import unittest; s=unittest.defaultTestLoader.discover('tests'); assert s.countTestCases() > 0, 'No tests discovered'; r=unittest.TextTestRunner(verbosity=2).run(s); raise SystemExit(not r.wasSuccessful())"], "timeout_seconds": 180}]}, "actions": {"verify": {"allowed": false, "reason": "revise/review stage 3; record the human decision.", "timeout_seconds": null}, "mark": {"allowed": false, "reason": "revise/review stage 3; record the human decision."}}, "artifacts": {"brief": "# Change brief\n\n## Problem and outcome\n\n## Acceptance criteria\n\n## Approach\n\nThe implementation checklist lives in `checklist.json` (definitions with id/description/verify) and is marked only with `sdlc.py mark`. Give an item a `check` (argv + timeout) whenever an automated proof exists; `verify` then runs it and no mark is needed.\n\n## Risks and verification\n"}, "decisions": [], "log": {"path": "runs/trial/04-test/output/test-log.md", "text": "", "truncated": false}, "cli_status": "Stage 3: pending\nNext: revise/review stage 3; record the human decision.\nAfter human review, fill in this command from the scaffold root (DECISION: approved or changes-requested):\n  python3 _system/scripts/sdlc.py decide trial 3 DECISION --reviewer 'REVIEWER' --source 'SOURCE' --reason 'REASON'\nChecklist: no items defined\nVerification: not run (implementation may be pending; a text log is not passing evidence)\nDeployment: not inferred from local review files; consult the deployment system."}}
 ok
 test_package_internal_symlink_is_refused_on_resume (test_prepare.PrepareTests.test_package_internal_symlink_is_refused_on_resume) ... ok
 test_package_storage_inside_target_refused (test_prepare.PrepareTests.test_package_storage_inside_target_refused) ... ok
@@ -103,7 +103,7 @@ test_record_from_other_checkout_and_symlink_refused (test_prepare.PrepareTests.t
 test_second_run_cannot_replace_first_runs_workflow (test_prepare.PrepareTests.test_second_run_cannot_replace_first_runs_workflow) ... ok
 test_stage_launch_stays_in_checkout_and_carries_saved_tool_instructions (test_prepare.PrepareTests.test_stage_launch_stays_in_checkout_and_carries_saved_tool_instructions) ... skills: skipped (tink not installed); the agent will run without stage disciplines
 warning: PR delivery may not be possible from this checkout: there is no `origin` remote. If this is still true at the end, hand the owner these commands instead of stopping silently: git push -u origin trial; gh pr create --fill
-Checkout: /private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpj5emz4k7/target
+Checkout: /private/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmp0ilihmrr/target
 Launch prompt (start a NEW session there):
 Begin stage 3 (build) of SDLC run `trial`.
 ok
@@ -115,20 +115,20 @@ test_workflow_keeps_project_tool_path_while_disabling_optional_discovery (test_p
 ok
 
 ----------------------------------------------------------------------
-Ran 18 tests in 10.103s
+Ran 18 tests in 10.065s
 
 OK
 
 # checklist item package-regressions
 $ ["python3", "-B", "-m", "unittest", "discover", "-s", "tests", "-p", "test_install_skill.py", "-v"]
 test_existing_symlink_is_not_followed (test_install_skill.InstallSkillTests.test_existing_symlink_is_not_followed) ... ok
-test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpo31f9q9h/missing': No such file or directory
+test_failed_copy_leaves_no_partial_installation (test_install_skill.InstallSkillTests.test_failed_copy_leaves_no_partial_installation) ... fatal: cannot change to '/var/folders/sk/r2ns7lvn2ygcsj7bhd0mvnyw0000gn/T/tmpas3epkgx/missing': No such file or directory
 ok
 test_independent_copy_and_repeat_preserves_destination (test_install_skill.InstallSkillTests.test_independent_copy_and_repeat_preserves_destination) ... ok
 test_installed_agents_md_names_only_packaged_paths (test_install_skill.InstallSkillTests.test_installed_agents_md_names_only_packaged_paths) ... ok
 test_package_instructions_drop_workspace_blocks (test_install_skill.InstallSkillTests.test_package_instructions_drop_workspace_blocks) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 0.125s
+Ran 5 tests in 0.124s
 
 OK
