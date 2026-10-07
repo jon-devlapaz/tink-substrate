@@ -34,10 +34,20 @@ Do not revise the original delivery archive to make it look complete earlier.
 
 Commit the closure record in an appropriate documentation branch or local evidence
 checkout; do not push directly to a protected main branch or reopen product code
-just to store it. No extra documentation PR is required unless the repo requires
-one. Then run the same archive command with `--phase closure`. Update the shared
-work record to show completion or the real remaining action. Cleanup of worktrees
-requires a separate inventory and proof that their work is preserved.
+just to store it. If the run branch was kept after merge, its checkout works: commit
+there and push that branch, so the record survives removing the worktree. That
+commit stays off `main`; say so in the report. No extra documentation PR is
+required unless the repo requires one. Then run the same archive command with
+`--phase closure`. Update the shared work record to show completion or the real
+remaining action. Cleanup of worktrees requires a separate inventory and proof
+that their work is preserved.
+
+Before removing the checkout the dashboard reads, stop that dashboard, or select a
+checkout that remains with `init --replace` and restart it. Otherwise it keeps
+showing its last snapshot, and a refresh reports Git as unavailable.
+
+Leave the user's main checkout as it is after merge; it may hold other work. Report
+that it is behind the merge and pull only when the user asks.
 
 ## What the archive proves
 
