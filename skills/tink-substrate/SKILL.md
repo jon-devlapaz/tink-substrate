@@ -35,6 +35,9 @@ consistently for setup and Substrate commands. Use the bundled pinned tools. If 
 installation; do not substitute a personal checkout. Keep an installed target SDLC and follow its contracts.
 Never upgrade it just to make setup match the guide. Use Seed Me's triage: a clear
 execution request can proceed to planning without an interview or fabricated seed.
+If someone answers or approves for the user, follow the start guide's rules for a
+relayed user or a stand-in. A stand-in's answers stay `simulated`, and its
+approvals are not human approval.
 Configure the project's actual verification commands and prepare the brief under
 its installed SDLC. Present the finished brief for required human acceptance.
 Continue authorized setup and planning without asking about routine path choices.
@@ -79,4 +82,5 @@ handoff or retrospective; add no extra process for hypothetical problems.
 Read the package's `docs/finish-a-change.md` before delivery. Save the retrospective
 and independent archive as part of finishing, not as homework for the user. Report
 the PR, dashboard, checks, retro, archive and any remaining decision. Merge only
-with actual user authorization, then record closure using that same guide.
+with actual user authorization received directly, not relayed by another agent,
+then record closure using that same guide.

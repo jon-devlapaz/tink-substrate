@@ -102,6 +102,30 @@ Completion here means the human has confirmed the displayed seed and its file is
 saved. That permits planning; it does not approve an unseen build brief. Continue
 into planning under the user's instruction to carry out the change.
 
+### When someone answers for the user
+
+Seed Me's decisions and the brief approval belong to the user. Two cases occur:
+
+- **Relayed user.** The user answers through another agent or person. Pass each
+  question and the user's words through unchanged. The session stays a human
+  session; record only what the user actually said.
+- **Stand-in.** An agent or person decides in the user's place. Only the user can
+  appoint one; record that appointment in the handoff. Run Seed Me in its agent
+  mode: it records every answer as `simulated` and saves
+  `seed-contract.simulated.md`, which cannot become a confirmed seed. Keep that
+  file outside the checkout, label it as proposals in the handoff, and omit
+  `--seed-contract` at stage 1. Record each later decision under the stand-in's
+  name, for example `coordinator stand-in for <user>`, never as the user. These
+  decisions let a trial continue; they are not human approval. The delivery report
+  and retro say which decisions came from the stand-in. Merge still needs the user.
+
+Later approvals follow the same rule. If feedback extends the scope after review,
+amend the brief and checklist, show the changed text to the user, and record
+approval of that text. A request such as "fix them" asks for the change; it does
+not approve wording the user has not seen. Merge only on authorization that the
+merging session received from the user directly. If it arrived through another
+agent, hand the merge back to the session that talks with the user.
+
 ## 4. Prepare tink-sdlc in the target checkout
 
 Select the actual target and an isolated worktree or clone. From Substrate, replace
