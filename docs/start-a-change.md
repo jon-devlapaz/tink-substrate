@@ -6,13 +6,14 @@ An agent host is still required. This is not yet a one-command software factory.
 
 ## 1. Check the basics
 
-The first path targets macOS with Codex Desktop and one existing Git repository.
-Open the target project in Codex and invoke the installed skill.
+The first path targets macOS, one existing Git repository, and an agent host that
+loads skills from a directory, such as Codex or Claude Code. Open the target
+project in that host and ask the agent to use the installed tink-substrate skill.
 The agent reads that project's instructions before choosing a separate checkout.
-The complete Codex Desktop handoff is still to be tested. Host permissions may
-require access to the selected checkouts, evidence directories and network; record
-actual prompts rather than assuming the author's permissions. Other agent hosts and
-Linux are outside the first user trial.
+One Claude Code run has reached an open PR this way; the Codex Desktop handoff is
+still to be tested. Host permissions may require access to the selected checkouts,
+evidence directories and network; record actual prompts rather than assuming the
+author's permissions. Linux is outside the first user trial.
 
 The public repository is `https://github.com/jon-devlapaz/tink-substrate`
 under MIT. Obtain it with:
@@ -22,6 +23,10 @@ git clone https://github.com/jon-devlapaz/tink-substrate.git
 cd tink-substrate
 python3 scripts/install_skill.py
 ```
+
+The default destination is Codex's skills directory (`$CODEX_HOME/skills`, else
+`~/.codex/skills`). For another host, pass its skills directory, for example
+`--destination ~/.claude/skills/tink-substrate` for Claude Code.
 
 The public clone and initial GitHub checks have passed. The two workflow sources
 below are also public.

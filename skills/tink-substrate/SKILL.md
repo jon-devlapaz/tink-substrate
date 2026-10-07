@@ -67,6 +67,10 @@ reasons to silently skip a required check or invent success.
 Follow the target's installed SDLC for implementation, verification and independent
 review. Use the agent host's supported delegation when available; if required
 review cannot run, report that unmet requirement. Never manufacture approval.
+A request to use this skill covers the separate planning, build and review sessions
+the SDLC asks for; start them as new sessions or subagents, whichever the host has.
+A subagent sees only its prompt, so add the absolute checkout path, the handoff
+path and what the session may write to the launcher's one-line prompt.
 
 Build one useful slice, check its behavior, then decide whether to continue or fix
 a demonstrated obstacle to future changes. Record that decision in the existing

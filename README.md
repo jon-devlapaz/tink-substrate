@@ -23,17 +23,20 @@ python3 scripts/install_skill.py
 ```
 
 The installer exports committed HEAD (not uncommitted or untracked files),
-copying the skill, guides, dashboard and archive code into your Codex
-skills directory. It downloads the pinned Seed Me and tink-sdlc sources and includes
+copying the skill, guides, dashboard and archive code into your agent host's
+skills directory (Codex's by default). It downloads the pinned Seed Me and tink-sdlc sources and includes
 their licenses. It refuses to replace an existing installation. The resulting
 package no longer needs this clone or your personal Tink setup.
 
-Open a new Codex session in the project you want to change and ask:
+For another host, use `--destination /path/to/its/skills/tink-substrate`; for
+Claude Code that is `--destination ~/.claude/skills/tink-substrate`.
 
-> Use $tink-substrate to [describe one useful change].
+Open a new agent session in the project you want to change and ask:
 
-For a different host, use `--destination /path/to/its/skills/tink-substrate`.
-Only Codex is the current onboarding target. For updates, install to a review directory outside the host's skills directory.
+> Use tink-substrate to [describe one useful change].
+
+Codex names the skill as `$tink-substrate`; Claude Code as `/tink-substrate`.
+For updates, install to a review directory outside the host's skills directory.
 After validation, move the old installation outside that skills directory for
 backup and move the new copy to its original location. Keep only one discoverable
 `tink-substrate` skill. Run records are separate and remain unchanged.
@@ -44,7 +47,8 @@ then take the change through planning, implementation, checks and review. You
 clarify the outcome, approve the brief and decide when to merge. The agent saves
 a retrospective and archive before handing back the PR.
 
-You need macOS, Python 3.11+, Git, Bash, Codex Desktop and your project's build tools.
+You need macOS, Python 3.11+, Git, Bash, an agent host such as Codex or Claude Code,
+and your project's build tools.
 PR delivery also needs authenticated GitHub CLI access. The agent reports any
 missing prerequisite. Your host may ask for permission to access the checkouts,
 local records or network. If it cannot keep the dashboard running, the agent gives
