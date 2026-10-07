@@ -103,6 +103,12 @@ Select the actual target and an isolated worktree or clone. From Substrate, repl
 `/absolute/path/to/isolated-target` below with that checkout's root. The initializer
 previews changes, preserves project instructions, and refuses conflicting installs.
 
+If you create the worktree with `git worktree add -b <run> PATH origin/main`, Git
+sets `origin/main` as the new branch's upstream. With `push.default=upstream`, a
+plain `git push` then updates `main`. Remove it at once with
+`git -C PATH branch --unset-upstream`, and push the run branch later with
+`git push -u origin <run>`.
+
 ```sh
 python3 .substrate-tools/tink-sdlc/scripts/init.py /absolute/path/to/isolated-target --check
 python3 .substrate-tools/tink-sdlc/scripts/init.py /absolute/path/to/isolated-target
@@ -142,6 +148,8 @@ launcher is not a substitute for this commit. Runtime lock files such as
 `runs/.<run>.lock` and `runs/<run>/.writer-lock` are not evidence: exclude those
 exact runtime paths using the checkout's local Git exclude file
 (`git rev-parse --git-path info/exclude`); untracked files also block archiving; do not ignore all run artifacts.
+In a linked worktree that command names the repository's shared exclude file, so
+the entries also apply to the main checkout and every other worktree.
 
 From the target checkout, read `_system/SDLC.md` and `stages/01-plan/CONTEXT.md`.
 Inspect status before creating a run. A small change normally fits the light
