@@ -25,16 +25,20 @@ outside the package.
 
 Use the user's current project as the target unless they name another. Read its
 instructions, Git status, worktrees and installed workflow before making changes.
-Resume an existing matching run when present. Otherwise choose a separate checkout
-and a short run name based on the requested change. Preserve existing work.
+For a matching run with `tools.json`, follow `docs/automatic-tools.md` to validate
+and resume its saved package. For a new run, choose a clean isolated checkout and
+run name, then follow that guide to prepare current tools before discovery.
+Preparation creates the run. Read the returned package's SKILL.md and guides,
+and use it for all remaining work. A matching older run without `tools.json`
+continues under its existing installed workflow and package without an upgrade.
+Preserve existing work. A preparation failure stops setup with its exact reason.
 
 ## Handle the wiring
 
 Follow the start guide yourself. Select a Python 3.11+ interpreter and use it
-consistently for setup and Substrate commands. Use the bundled pinned tools. If they are missing, report an incomplete
-installation; do not substitute a personal checkout. Keep an installed target SDLC and follow its contracts.
-Never upgrade it just to make setup match the guide. Use Seed Me's triage: a clear
-execution request can proceed to planning without an interview or fabricated seed.
+consistently. For prepared runs, use the saved package's workflow wrapper for SDLC
+commands. Use Seed Me's triage: a clear execution request can proceed to planning
+without an interview or fabricated seed.
 If someone answers or approves for the user, follow the start guide's rules for a
 relayed user or a stand-in. A stand-in's answers stay `simulated`, and its
 approvals are not human approval.
@@ -74,8 +78,11 @@ review. Use the agent host's supported delegation when available; if required
 review cannot run, report that unmet requirement. Never manufacture approval.
 A request to use this skill covers the separate planning, build and review sessions
 the SDLC asks for; start them as new sessions or subagents, whichever the host has.
-A subagent sees only its prompt, so add the absolute checkout path, the handoff
-path and what the session may write to the launcher's one-line prompt.
+For prepared runs, use the workflow wrapper's final prepared stage prompt. It
+carries the saved package, tools record and bundled-only instructions. Add what
+the session may write and the absolute handoff path. Keep stage sessions separate
+and sequential in the prepared isolated checkout. For older runs, add the checkout
+and handoff paths and write limits to the launcher's prompt.
 
 Build one useful slice, check its behavior, then decide whether to continue or fix
 a demonstrated obstacle to future changes. Record that decision in the existing

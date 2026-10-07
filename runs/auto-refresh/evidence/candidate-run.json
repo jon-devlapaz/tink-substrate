@@ -1,0 +1,44 @@
+{
+  "candidate": "da02d1005e2ca9d60949cdaf2dcfe2a1ea917436",
+  "components": {
+    "tink-substrate": {
+      "url": "https://github.com/jon-devlapaz/tink-substrate.git",
+      "workflow": "ci.yml",
+      "revision": "da02d1005e2ca9d60949cdaf2dcfe2a1ea917436",
+      "ci_run": null,
+      "candidate": true,
+      "version": "0.2.0"
+    },
+    "tink-skills": {
+      "url": "https://github.com/jon-devlapaz/tink-skills.git",
+      "workflow": "validate.yml",
+      "revision": "a3fb63a78ecec4175ceffbd2565f7e2fee00608e",
+      "ci_run": 37537449916,
+      "version": "2.0.0"
+    },
+    "tink-sdlc": {
+      "url": "https://github.com/jon-devlapaz/tink-sdlc.git",
+      "workflow": "validate.yml",
+      "revision": "5ed5825d0e897c81aab856a7603d88f99860c376",
+      "ci_run": 37563324684,
+      "version": "1.21.0"
+    }
+  },
+  "compatibility": {
+    "result": "passed",
+    "checks": [
+      "seed-simulated-session",
+      "sdlc-api-1",
+      "dashboard-unapproved-run",
+      "unapproved-verify-refused"
+    ],
+    "limits": "Synthetic compatibility check; no interview or feature delivery."
+  },
+  "checks": [
+    "real-sdlc-1.21-install",
+    "copied-cli-offline-resume",
+    "real-stage-1-with-saved-prompt",
+    "copied-cli-blocked-status"
+  ],
+  "limits": "Synthetic target; candidate source selected explicitly for this probe; no CI bypass in production, human approval or feature delivery."
+}
