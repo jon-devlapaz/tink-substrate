@@ -1,0 +1,35 @@
+{
+  "components": {
+    "tink-substrate": {
+      "url": "https://github.com/jon-devlapaz/tink-substrate.git",
+      "workflow": "ci.yml",
+      "revision": "015810087ba2032e11c2b38d0f654a1e58b3e58d",
+      "ci_run": 37568163436,
+      "version": "0.1.0"
+    },
+    "tink-skills": {
+      "url": "https://github.com/jon-devlapaz/tink-skills.git",
+      "workflow": "validate.yml",
+      "revision": "a3fb63a78ecec4175ceffbd2565f7e2fee00608e",
+      "ci_run": 37537449916,
+      "version": "2.0.0"
+    },
+    "tink-sdlc": {
+      "url": "https://github.com/jon-devlapaz/tink-sdlc.git",
+      "workflow": "validate.yml",
+      "revision": "5ed5825d0e897c81aab856a7603d88f99860c376",
+      "ci_run": 37563324684,
+      "version": "1.21.0"
+    }
+  },
+  "compatibility": {
+    "result": "passed",
+    "checks": [
+      "seed-help",
+      "sdlc-api-1",
+      "dashboard-unapproved-run"
+    ],
+    "limits": "Synthetic compatibility check; no interview or feature delivery."
+  },
+  "limits": "Live source compatibility only. This does not exercise the candidate entry skill after merge."
+}

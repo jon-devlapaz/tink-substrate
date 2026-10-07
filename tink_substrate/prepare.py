@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -101,11 +102,19 @@ def smoke_package(package):
         command(['git', 'init', '-q', target], env=env)
         command(['git', '-C', target, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
                  'commit', '--allow-empty', '-qm', 'synthetic compatibility fixture'], env=env)
-        command([sys.executable, '-B', tools / 'tink-skills/skills/seed-me/scripts/session.py', '--help'], env=env)
+        helper = tools / 'tink-skills/skills/seed-me/scripts/session.py'
+        session = json.loads(command([sys.executable, '-B', helper, 'init', '--root',
+                                      Path(directory) / 'seed-sessions', '--operator', 'simulated'], env=env))
+        ledger = json.loads(command([sys.executable, '-B', helper, 'read', session['session']], env=env))
+        if ledger.get('status') != 'active' or ledger.get('operator') != 'simulated':
+            raise ValueError('Bundled Seed Me did not preserve simulated session authority')
+        command([sys.executable, '-B', helper, 'end', session['session'], '--status', 'stopped',
+                 '--reason', 'Synthetic compatibility check only'], env=env)
         command([sys.executable, '-B', tools / 'tink-sdlc/scripts/init.py', target], env=env)
         runtime = target / '_system/scripts/sdlc.py'
         capabilities = json.loads(command([sys.executable, '-B', runtime, 'capabilities', '--json'], env=env))
-        if capabilities.get('protocol') != 'tink-sdlc' or capabilities.get('api_version') != 1:
+        if (capabilities.get('protocol') != 'tink-sdlc' or type(capabilities.get('api_version')) is not int
+                or capabilities.get('api_version') != 1):
             raise ValueError('Bundled SDLC does not supply supported API 1')
         command([sys.executable, '-B', runtime, 'new', 'smoke', '--profile', 'light', '--kind', 'feature'], env=env)
         record = Path(directory) / 'work.md'
@@ -116,7 +125,11 @@ def smoke_package(package):
         source = snapshot['sources']['workflow']
         if source['status'] != 'ok' or source['data'].get('verification_status') != 'blocked':
             raise ValueError('Bundled dashboard did not report the unapproved SDLC run as blocked')
-        return {'result': 'passed', 'checks': ['seed-help', 'sdlc-api-1', 'dashboard-unapproved-run'],
+        refused = subprocess.run([sys.executable, '-B', runtime, 'verify', 'smoke'], env=env,
+                                 capture_output=True, text=True, timeout=30)
+        if refused.returncode == 0:
+            raise ValueError('Bundled SDLC accepted verification without human approval')
+        return {'result': 'passed', 'checks': ['seed-simulated-session', 'sdlc-api-1', 'dashboard-unapproved-run', 'unapproved-verify-refused'],
                 'limits': 'Synthetic compatibility check; no interview or feature delivery.'}
 
 
@@ -201,6 +214,12 @@ def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind=
             return validate_record(checkout, run, json.loads(receipt.read_text()))
         if path.exists():
             raise ValueError('Cannot refresh an existing run without its tools record; leave it unchanged')
+        for existing in (checkout / 'runs').glob('*/tools.json'):
+            if existing.is_symlink() or existing.parent.is_symlink():
+                raise ValueError('Existing run tools must not be symlinks')
+            saved = json.loads(existing.read_text())
+            if saved.get('checkout') == str(checkout):
+                raise ValueError('This checkout holds another prepared run; select another isolated checkout')
         if git(checkout, 'status', '--porcelain', '--untracked-files=all'):
             raise ValueError('New-run preparation needs a clean isolated checkout')
         verification = checkout / '_system/verification.json'
@@ -242,12 +261,18 @@ def workflow(checkout, run, arguments):
     path = checkout / 'runs' / run / 'tools.json'
     if path.is_symlink() or path.parent.is_symlink() or path.parent.parent.is_symlink():
         raise ValueError('Run paths must not be symlinks')
-    validate_record(checkout, run, json.loads(path.read_text()))
+    record = validate_record(checkout, run, json.loads(path.read_text()))
     commands = {'status', 'capabilities', 'verify', 'mark', 'decide', 'stage', 'pull', 'walk', 'lock-tests'}
     if not arguments or arguments[0] not in commands:
         raise ValueError('Use prepare for new runs; optional global integrations are disabled')
     if arguments[0] not in ('capabilities', 'walk') and (len(arguments) < 2 or arguments[1] != run):
         raise ValueError('Workflow commands must name this recorded run')
+    arguments = list(arguments)
+    if arguments[0] == 'stage':
+        if any(value == '--worktree' or value.startswith('--worktree=') for value in arguments):
+            raise ValueError('Stages use the prepared checkout; select a separate checkout before preparation')
+        if '--here' not in arguments:
+            arguments.append('--here')
     configuration = json.loads((checkout / '_system/verification.json').read_text())
     if configuration.get('require_tink'):
         raise ValueError('This target requires Tink; bundled-only workflow cannot satisfy that policy')
@@ -256,5 +281,16 @@ def workflow(checkout, run, arguments):
                 "shutil.which=lambda name,*a,**k: None if name in ('tink','tink-route') else original(name,*a,**k); "
                 "sys.argv=sys.argv[1:]; runpy.run_path(sys.argv[0],run_name='__main__')")
     env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
-    return subprocess.call([sys.executable, '-B', '-c', launcher,
-                            str(checkout / '_system/scripts/sdlc.py'), *arguments], cwd=checkout, env=env)
+    result = subprocess.call([sys.executable, '-B', '-c', launcher,
+                              str(checkout / '_system/scripts/sdlc.py'), *arguments], cwd=checkout, env=env)
+    if result == 0 and arguments[0] == 'stage' and '--check' not in arguments:
+        package = Path(record['package'])
+        prefix = shlex.join([sys.executable, '-B', '-m', 'tink_substrate', 'workflow',
+                             '--checkout', str(checkout), '--run', run, '--'])
+        print(f'Prepared stage session prompt (start a new session in {checkout}):', flush=True)
+        print(f'Perform stage {arguments[2]} for run {run}. Read its stages/ CONTEXT.md, '
+              f'{checkout}/runs/{run}/handoff.md, {path}, and {package}/docs/automatic-tools.md. '
+              f'Use {package} as the package directory and run SDLC commands through {prefix}. '
+              'This run is bundled-only; optional global Tink and tink-route are disabled. '
+              'Use the stage outputs and human gates; preparation is not approval.', flush=True)
+    return result

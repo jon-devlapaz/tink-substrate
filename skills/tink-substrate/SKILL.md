@@ -78,8 +78,11 @@ review. Use the agent host's supported delegation when available; if required
 review cannot run, report that unmet requirement. Never manufacture approval.
 A request to use this skill covers the separate planning, build and review sessions
 the SDLC asks for; start them as new sessions or subagents, whichever the host has.
-A subagent sees only its prompt, so add the absolute checkout path, the handoff
-path and what the session may write to the launcher's one-line prompt.
+For prepared runs, use the workflow wrapper's final prepared stage prompt. It
+carries the saved package, tools record and bundled-only instructions. Add what
+the session may write and the absolute handoff path. Keep stage sessions separate
+and sequential in the prepared isolated checkout. For older runs, add the checkout
+and handoff paths and write limits to the launcher's prompt.
 
 Build one useful slice, check its behavior, then decide whether to continue or fix
 a demonstrated obstacle to future changes. Record that decision in the existing

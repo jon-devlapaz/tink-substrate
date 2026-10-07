@@ -50,7 +50,15 @@ class PrepareTests(unittest.TestCase):
                 skill = repo / 'skills/seed-me'
                 (skill / 'scripts').mkdir(parents=True)
                 (skill / 'SKILL.md').write_text('---\nname: seed-me\nmetadata:\n  version: "2.0.0"\n---\n')
-                (skill / 'scripts/session.py').write_text('import argparse; argparse.ArgumentParser().parse_args()')
+                (skill / 'scripts/session.py').write_text("""import argparse,json
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('command');p.add_argument('session',nargs='?');p.add_argument('--root',type=Path);p.add_argument('--operator');p.add_argument('--status');p.add_argument('--reason');a=p.parse_args()
+if a.command=='init':
+ d=a.root/'fixture';d.mkdir(parents=True);(d/'ledger.json').write_text(json.dumps({'status':'active','operator':a.operator})); print(json.dumps({'session':str(d)}))
+elif a.command=='read': print((Path(a.session)/'ledger.json').read_text())
+elif a.command=='end': print('{}')
+else: raise SystemExit(2)
+""")
             else:
                 assets = repo / 'assets'
                 assets.mkdir()
@@ -195,6 +203,37 @@ if not a.check:
         with patch.dict(os.environ, {'PATH': str(bin_path) + os.pathsep + os.environ['PATH']}):
             self.assertEqual(workflow(self.checkout, 'trial', ['verify', 'trial']), 0)
         self.assertTrue(marker.is_file())
+
+    def test_second_run_cannot_replace_first_runs_workflow(self):
+        self.prepare('first')
+        commit(self.checkout)
+        with self.assertRaisesRegex(ValueError, 'another prepared run'):
+            self.prepare('second')
+        self.assertEqual(prepare_run(self.checkout, 'first', self.root / 'packages')['run'], 'first')
+
+    def test_stage_launch_stays_in_checkout_and_carries_saved_tool_instructions(self):
+        import contextlib, io
+        record = self.prepare()
+        (self.checkout / 'runs/trial/checklist.json').write_text(json.dumps({'schema': 1, 'items': [{'id': 'fixture-check', 'description': 'fixture', 'verify': 'fixture', 'check': {'argv': ['python3', '-c', 'print(1)'], 'timeout_seconds': 10}}]}))
+        runtime = self.checkout / '_system/scripts/sdlc.py'
+        subprocess.run([__import__('sys').executable, '-B', str(runtime), 'decide', 'trial', '3', 'approved', '--reviewer', 'Synthetic fixture', '--source', 'tests only', '--reason', 'fixture'], check=True, capture_output=True)
+        commit(self.checkout)
+        before = git(self.checkout, 'worktree', 'list', '--porcelain')
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(workflow(self.checkout, 'trial', ['stage', 'trial', '3']), 0)
+        self.assertEqual(git(self.checkout, 'worktree', 'list', '--porcelain'), before)
+        self.assertIn(record['package'], output.getvalue())
+        self.assertIn('tools.json', output.getvalue())
+        self.assertIn('bundled-only', output.getvalue())
+        with self.assertRaisesRegex(ValueError, 'prepared checkout'):
+            workflow(self.checkout, 'trial', ['stage', 'trial', '3', '--worktree', str(self.root / 'child')])
+
+    def test_unrecorded_extra_package_file_refuses_resume(self):
+        record = self.prepare()
+        (Path(record['package']) / 'extra.py').write_text('unrecorded code')
+        with self.assertRaisesRegex(ValueError, 'unrecorded'):
+            prepare_run(self.checkout, 'trial', self.root / 'packages')
 
 
 class EligibilityTests(unittest.TestCase):

@@ -102,6 +102,12 @@ def check(root):
     receipt = json.loads((root / 'installation.json').read_text())
     if receipt.get('schema') != 1 or not receipt.get('files'):
         raise ValueError('Unsupported or empty installation receipt')
+    if any(path.is_symlink() for path in root.rglob('*')):
+        raise ValueError('Installed package contains a symlink')
+    actual = {str(path.relative_to(root)) for path in root.rglob('*') if path.is_file()}
+    expected = set(receipt['files']) | {'installation.json'}
+    if actual - expected:
+        raise ValueError('Installed package contains unrecorded files: ' + ', '.join(sorted(actual - expected)))
     for name, digest in receipt['files'].items():
         path = root / name
         if Path(name).is_absolute() or '..' in Path(name).parts or path.resolve().is_relative_to(root.resolve()) is False:

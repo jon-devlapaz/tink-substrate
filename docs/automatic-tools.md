@@ -40,7 +40,10 @@ its required human brief acceptance. Preparation creates no approval.
 
 On resume, call prepare with the same checkout and run. It checks the existing
 package and managed workflow files without network access, and returns the saved
-record. The same rule applies to workflow commands. New upstream commits belong
+record. The same rule applies to workflow commands. Stage launches stay in this
+isolated checkout and print a prepared stage prompt carrying the saved package
+and wrapper instructions. Use that final prompt for each fresh stage session.
+The wrapper refuses `--worktree`; choose the separate checkout before preparation. New upstream commits belong
 to the next run. Project-owned verification settings remain editable under SDLC's
 existing review rules. Changed managed files or package files refuse resume.
 An old run without a tools record must continue under its existing contracts;
@@ -49,7 +52,8 @@ prepare refuses to update it. Do not manufacture a tools record for that run.
 ## Boundaries and recovery
 
 - New-run preparation requires a clean target and package storage outside it.
-  The target must be the explicitly selected isolated checkout. Its main checkout
+  The target must be the explicitly selected isolated checkout. Use one prepared run per checkout. Preparation refuses another prepared run
+  in the same checkout, so its shared workflow cannot replace the first run's. Its main checkout
   and existing runs are not upgraded. Customized managed files refuse the upgrade;
   project-owned configuration and pins are preserved.
 - This slice updates the three bundled components. The workflow wrapper disables
@@ -59,8 +63,9 @@ prepare refuses to update it. Do not manufacture a tools record for that run.
 - `prepare` needs authenticated `gh` access to repository and Actions metadata,
   Git, Python 3.11+ and Bash. It checks the current main at the last preflight;
   an upstream commit landing after that check belongs to the next run.
-- Compatibility checks exercise Seed Me's helper, SDLC API 1 and the dashboard's
-  blocked state for an unapproved synthetic run. They do not prove interview
+- Compatibility checks create, read and stop a simulated Seed Me session,
+  exercise SDLC API 1 and the dashboard's blocked state, and confirm that
+  verification refuses an unapproved synthetic run. They do not prove interview
   quality or completed user work. Hashes are local integrity evidence, not signatures.
 - A crash before `tools.json` is saved leaves an unprepared run. Preserve the
   checkout and package for inspection. A retry refuses that run rather than
