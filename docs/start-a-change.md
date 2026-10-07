@@ -114,6 +114,13 @@ Seed Me's decisions and the brief approval belong to the user. Two cases occur:
   decisions let a trial continue; they are not human approval. The delivery report
   and retro say which decisions came from the stand-in. Merge still needs the user.
 
+Later approvals follow the same rule. If feedback extends the scope after review,
+amend the brief and checklist, show the changed text to the user, and record
+approval of that text. A request such as "fix them" asks for the change; it does
+not approve wording the user has not seen. Merge only on authorization that the
+merging session received from the user directly. If it arrived through another
+agent, hand the merge back to the session that talks with the user.
+
 ## 4. Prepare tink-sdlc in the target checkout
 
 Select the actual target and an isolated worktree or clone. From Substrate, replace
