@@ -1,11 +1,14 @@
+import re
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.install_skill import install
+from scripts.install_skill import install, package_instructions
 from scripts.check_install import check
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class InstallSkillTests(unittest.TestCase):
@@ -69,3 +72,24 @@ class InstallSkillTests(unittest.TestCase):
                 install(root / 'missing', root / 'installed')
             self.assertFalse((root / 'installed').exists())
             self.assertEqual(list(root.iterdir()), [])
+
+    def test_package_instructions_drop_workspace_blocks(self):
+        text = ('# Rules\n\nKeep this.\n\n\n<!-- AI-Native SDLC Router -->\n## SDLC Workspace\n- Read `_system/SDLC.md`.\n'
+                '<!-- End AI-Native SDLC Router -->\n\n<!-- tink:rules begin skillset=x digest=1 -->\n- rule\n'
+                '<!-- tink:rules end -->\n')
+        self.assertEqual(package_instructions(text), '# Rules\n\nKeep this.\n')
+        self.assertEqual(package_instructions('# Rules\n'), '# Rules\n')
+        with self.assertRaisesRegex(ValueError, 'unmatched'):
+            package_instructions('# Rules\n<!-- tink:rules begin skillset=x -->\n- rule\n')
+
+    def test_installed_agents_md_names_only_packaged_paths(self):
+        # Installs this repository's committed HEAD; AGENTS.md does not need the pinned tools.
+        with tempfile.TemporaryDirectory() as directory, patch('scripts.install_skill.PINS', {}):
+            destination = install(ROOT, Path(directory) / 'installed')
+            text = (destination / 'AGENTS.md').read_text()
+            self.assertIn('docs/finish-a-change.md', text)
+            for marker in ('SDLC Router', 'tink:rules', '_system/', 'stages/', '_shared/'):
+                self.assertNotIn(marker, text)
+            # AGENTS.md names tests/fixtures/ as the source repository's, not the package's.
+            paths = [p for p in re.findall(r'`([^`\s]+/[^`\s]*)`', text) if not p.startswith('tests/')]
+            self.assertEqual([p for p in paths if not (destination / p).exists()], [])
