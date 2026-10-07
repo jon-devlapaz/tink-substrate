@@ -84,7 +84,8 @@ For manual setup or troubleshooting, see [Start a change](docs/start-a-change.md
 
 The agent gives you a local dashboard URL. It shows the selected work item,
 checkout and worktrees, linked PR, workflow status and saved artifacts by stage.
-It reads those sources when refreshed; it does not discover every project or
+It reads those sources when you press Refresh sources (a page reload shows the
+last snapshot); it does not discover every project or
 establish which agent owns a worktree. The pinned SDLC shows text status.
 
 For manual dashboard commands, see [Start a change](docs/start-a-change.md#5-connect-the-work-to-the-dashboard).
