@@ -94,3 +94,13 @@ Follow the actual GitHub README in a fresh session, complete a
 bounded change with real approvals, resume once after interruption, and save its
 reviewed PR and retrospective. Record each intervention. Change the system only
 where that run demonstrates a need.
+
+## Automatic preparation
+
+New runs now select current main with exact-commit CI, export separate packages,
+and retain a tools receipt. Offline resume and failure cases are checked using
+real temporary Git repositories and synthetic CI responses. The compatibility
+probe executes copied Seed Me, SDLC and dashboard code on a synthetic unapproved
+run. These checks do not establish a human interview or complete feature delivery.
+See `runs/auto-refresh/retro.md` for the final candidate's live-source evidence and
+remaining limits. Optional Tink/routing provisioning is outside this slice.

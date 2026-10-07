@@ -139,7 +139,8 @@ def versions(package, sources):
 def workflow_digest(checkout):
     receipt = checkout / '_system/scaffold.json'
     value = json.loads(receipt.read_text())
-    paths = ['_system/scaffold.json', *value['files']]
+    owned = set(value.get('projectOwned', [])) | {'_system/verification.json'}
+    paths = ['_system/scaffold.json', *(name for name in value['files'] if name not in owned)]
     hashes = {}
     for name in paths:
         path = checkout / name
@@ -247,5 +248,13 @@ def workflow(checkout, run, arguments):
         raise ValueError('Use prepare for new runs; optional global integrations are disabled')
     if arguments[0] not in ('capabilities', 'walk') and (len(arguments) < 2 or arguments[1] != run):
         raise ValueError('Workflow commands must name this recorded run')
-    with basic_environment() as env:
-        return subprocess.call([sys.executable, '-B', str(checkout / '_system/scripts/sdlc.py'), *arguments], cwd=checkout, env=env)
+    configuration = json.loads((checkout / '_system/verification.json').read_text())
+    if configuration.get('require_tink'):
+        raise ValueError('This target requires Tink; bundled-only workflow cannot satisfy that policy')
+    # Disable only the runtime's optional discovery. Project checks retain PATH.
+    launcher = ("import runpy,shutil,sys; original=shutil.which; "
+                "shutil.which=lambda name,*a,**k: None if name in ('tink','tink-route') else original(name,*a,**k); "
+                "sys.argv=sys.argv[1:]; runpy.run_path(sys.argv[0],run_name='__main__')")
+    env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
+    return subprocess.call([sys.executable, '-B', '-c', launcher,
+                            str(checkout / '_system/scripts/sdlc.py'), *arguments], cwd=checkout, env=env)

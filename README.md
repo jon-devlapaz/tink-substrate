@@ -41,6 +41,11 @@ After validation, move the old installation outside that skills directory for
 backup and move the new copy to its original location. Keep only one discoverable
 `tink-substrate` skill. Run records are separate and remain unchanged.
 
+Before each new run, the entry skill prepares current Substrate, Seed Me and SDLC
+from merged main commits with successful CI and checks them together. The run
+records exact versions and keeps them on resume. See [Current tools for a new
+run](docs/automatic-tools.md) for commands, failures and the bundled-only boundary.
+
 This entry point is being tested in supervised trials. It directs the agent to handle
 tool setup, a separate checkout, the work record and dashboard,
 then take the change through planning, implementation, checks and review. You

@@ -176,6 +176,26 @@ if not a.check:
         with self.assertRaisesRegex(ValueError, 'symlink'):
             prepare_run(self.checkout, 'trial', self.root / 'packages')
 
+    def test_workflow_keeps_project_tool_path_while_disabling_optional_discovery(self):
+        import os
+        self.prepare()
+        bin_path = self.root / 'bin'; bin_path.mkdir()
+        marker = self.root / 'project-check-ran'
+        tool = bin_path / 'project-check'
+        tool.write_text('#!/bin/sh\necho checked > "' + str(marker) + '"\n'); tool.chmod(0o755)
+        config = self.checkout / '_system/verification.json'
+        config.write_text(json.dumps({'require_tink': False, 'checks': [{'argv': ['project-check'], 'timeout_seconds': 10}]}))
+        run = self.checkout / 'runs/trial'
+        (run / 'checklist.json').write_text(json.dumps({'schema': 1, 'items': [{'id': 'fixture-check', 'description': 'fixture', 'verify': 'fixture', 'check': {'argv': ['python3', '-c', 'print("fixture")'], 'timeout_seconds': 10}}]}))
+        # Synthetic test authority, never a real user receipt.
+        runtime = self.checkout / '_system/scripts/sdlc.py'
+        subprocess.run([__import__('sys').executable, '-B', str(runtime), 'decide', 'trial', '3', 'approved', '--reviewer', 'Synthetic fixture', '--source', 'tests only', '--reason', 'fixture'], check=True, capture_output=True)
+        # Configuration is project-owned and can be reviewed after preparation.
+        commit(self.checkout)
+        with patch.dict(os.environ, {'PATH': str(bin_path) + os.pathsep + os.environ['PATH']}):
+            self.assertEqual(workflow(self.checkout, 'trial', ['verify', 'trial']), 0)
+        self.assertTrue(marker.is_file())
+
 
 class EligibilityTests(unittest.TestCase):
     def response(self, endpoint):
