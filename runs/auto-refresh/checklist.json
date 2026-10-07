@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "refresh-boundaries",
+      "description": "Current exact-head CI, immutable resume, target refusal and failure cases work",
+      "verify": "Run behavioral preparation tests",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_prepare*.py",
+          "-v"
+        ],
+        "timeout_seconds": 180
+      }
+    },
+    {
+      "id": "package-regressions",
+      "description": "Existing copied package installation remains intact",
+      "verify": "Run installation boundary tests",
+      "check": {
+        "argv": [
+          "python3",
+          "-B",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_install_skill.py",
+          "-v"
+        ],
+        "timeout_seconds": 90
+      }
+    }
+  ]
+}

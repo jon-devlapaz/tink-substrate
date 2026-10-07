@@ -54,26 +54,19 @@ Keep existing changes and active worktrees. Choose a separate checkout for the r
 Run the commands below from the installed skill directory (the package root) unless
 another directory is named. Source development must first install committed HEAD to a separate trial directory.
 
-## 2. Obtain the workflow tools
+## 2. Prepare current tools, or resume the existing run
 
-The copied skill already contains these tools in `.substrate-tools/`, with licenses
-and revisions listed in `installation.json`. No global skill library is required.
-Do not modify the installation or fetch tools during a run. If a required file is
-missing, report the incomplete installation and install to a review directory outside the host's skills directory. After validation,
-move the old copy outside the skills directory for backup and put the new copy at
-the original path. Keep only one discoverable entry skill.
+For a new run, follow [Current tools for a new run](automatic-tools.md) before
+starting Seed Me. It refreshes checked sources, prepares the isolated target and
+creates the run. Read the returned package's instructions and use its workflow
+wrapper. For a matching prepared run, that same command validates and returns
+its saved versions without an update.
 
-For source development, the installer can use `--tool-cache PATH` with local Git
-clones containing the pinned commits. It exports committed files at those pins,
-not mutable working copies. Ordinary installation fetches those commits itself.
-
-The selected sources provide Seed Me 1.17.1 and tink-sdlc scaffold 1.20.0. Both pins are on merged public history.
-This SDLC version supplies both text status and the structured `status --json` (API 1);
-the dashboard uses structured status when the installed workspace has it, and otherwise
-displays text without inventing structured verification or approval.
-Their original licenses remain in the bundled sources. Updating either revision is a
-separate, reviewed dependency change. Network or authentication failures mean the
-tool is unavailable; do not substitute remembered instructions.
+An older run without `tools.json` keeps its installed workflow and the package it
+started with. The remaining manual setup commands below describe that older
+pinned path; do not use them to replace a prepared run's tools or create it again.
+The pinned installer and `--tool-cache` remain available for reproducible source
+installation. They export committed Git objects and retain licenses.
 
 ## 3. Turn the hunch into a confirmed seed
 
@@ -95,11 +88,8 @@ triage calls for one. The target's decision and verification rules still apply.
 
 The skill owns the interview, session, viewer, and seed confirmation. Its helpers
 are runnable with Python; its session records normally live under
-`~/.local/share/seed-me/sessions/`. Seed Me saves the confirmed seed to the
-repository root unless another destination is agreed with the user. Here, agree
-a path outside every checkout, such as the session's directory: the main
-checkout holds other work and the isolated checkout may not exist yet. Keep the
-returned path. Do not create a confirmed
+`~/.local/share/seed-me/sessions/`. Follow the bundled Seed Me version's save rules and keep its returned handoff path. Seed Me 2.0 saves the seed and
+ledger together in the session folder outside the checkout. Do not create a confirmed
 seed from an example or infer confirmation from a saved file's name.
 
 Completion here means the human has confirmed the displayed seed and its file is
@@ -116,7 +106,7 @@ Seed Me's decisions and the brief approval belong to the user. Two cases occur:
 - **Stand-in.** An agent or person decides in the user's place. Only the user can
   appoint one; record that appointment in the handoff. Run Seed Me in its agent
   mode: it records every answer as `simulated` and saves
-  `seed-contract.simulated.md`, which cannot become a confirmed seed. Keep that
+  a simulated seed under that version's save rules, which cannot become a confirmed seed. Keep that
   file outside the checkout, label it as proposals in the handoff, and omit
   `--seed-contract` at stage 1. Record each later decision under the stand-in's
   name, for example `coordinator stand-in for <user>`, never as the user. These
@@ -130,7 +120,15 @@ not approve wording the user has not seen. Merge only on authorization that the
 merging session received from the user directly. If it arrived through another
 agent, hand the merge back to the session that talks with the user.
 
-## 4. Prepare tink-sdlc in the target checkout
+## 4. Prepare planning in the target checkout
+
+For a prepared run, the current scaffold and run already exist. Configure the
+actual project checks, commit the setup and `tools.json`, and open stage 1 through
+the workflow wrapper in [Current tools for a new run](automatic-tools.md). Then
+follow the handoff and human review steps below. Skip manual initialization and
+`sdlc.py new` in this section. Use the wrapper for later SDLC commands too.
+
+### Manual pinned setup
 
 Select the actual target and an isolated worktree or clone. From Substrate, replace
 `/absolute/path/to/isolated-target` below with that checkout's root. The initializer
