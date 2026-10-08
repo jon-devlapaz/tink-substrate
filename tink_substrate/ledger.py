@@ -186,7 +186,42 @@ def cell(values, show):
     return show(values) if len(values) >= MIN_CELL else '—'
 
 
+def operator_view(rows, unattributed):
+    """The one number: useful merged changes per operator hour, at caps C = 2, 5 and 10 minutes. Changes count in the
+    week they merged; operator hours count in the week they were spent."""
+    weeks, hours = {}, {}
+    for row in rows.values():
+        stamp = row['times'].get('merged') or row['times'].get('closed')
+        if stamp:
+            year, number, _ = when(stamp).isocalendar()
+            weeks.setdefault(f'{year}-W{number:02d}', []).append(row)
+    spent = [(row['operator'].get('minutes_by_week') or {}) for row in rows.values() if row.get('operator')]
+    spent += [{name: value['minutes']} for name, value in unattributed.items()]
+    for by_week in spent:
+        for name, minutes in by_week.items():
+            for cap, value in minutes.items():
+                hours.setdefault(name, {}).setdefault(cap, 0)
+                hours[name][cap] += value / 60
+    lines = ['View 1b: operator attention (minutes from transcripts; C = gap cap)']
+    for name in sorted(set(weeks) | set(hours)):
+        merged = [r for r in weeks.get(name, []) if r['outcome']['state'] == 'merged']
+        useful = [r for r in merged if not r['outcome']['reverted_by']]
+        covered = [r for r in merged if r.get('operator')]
+        total = hours.get(name, {})
+        if not total:
+            continue
+        loose = unattributed.get(name, {}).get('minutes', {}).get('c5', 0) / 60
+        per_hour = ' '.join(f'{cap}:{len(useful) / total[cap]:.1f}' if total.get(cap) and len(covered) >= MIN_CELL
+                            else f'{cap}:—' for cap in ('c2', 'c5', 'c10'))
+        median = cell([r['operator']['minutes']['c5'] for r in covered], lambda v: f'{statistics.median(v):.0f}')
+        lines.append(f'  {name}  with operator data {len(covered)}/{len(merged)}  operator h {total.get("c5", 0):.1f}'
+                     f'  unattributed h {loose:.1f}  median min/change {median}  useful/h {per_hour}')
+    return lines
+
+
 def report(rows):
+    unattributed = {change.split('/', 1)[1]: row['unattributed'] for change, row in rows.items() if row.get('unattributed')}
+    rows = {change: row for change, row in rows.items() if 'outcome' in row}
     merged = [row for row in rows.values() if row['outcome']['state'] == 'merged']
     weeks = {}
     for row in merged:
@@ -197,6 +232,7 @@ def report(rows):
     for week in sorted(weeks):
         group = weeks[week]
         lines.append(f'  {week}  merged {len(group)}  lead {cell([r["times"]["lead_hours"] for r in group], median)}')
+    lines += operator_view(rows, unattributed)
     reverted = sum(bool(row['outcome']['reverted_by']) for row in merged)
     share = lambda values: f'{100 * sum(values) / len(values):.0f}%'
     lines += ['View 3: quality',

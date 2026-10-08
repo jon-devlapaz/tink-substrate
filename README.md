@@ -114,8 +114,15 @@ again adds nothing new. `ledger report` prints weekly throughput and quality; ce
 
 ```bash
 python3 -m tink_substrate ledger sweep --repo owner/name=~/path/to/clone
+python3 -m tink_substrate ledger sessions
 python3 -m tink_substrate ledger report
 ```
+
+`ledger sessions` adds operator minutes and touches per change from Claude Code, Codex and Pi transcripts. Each
+prompt you type is credited with the gap since the agent's last activity, capped at C minutes (2, 5 and 10 are all
+kept). Parallel sessions never count a minute twice, and time no change can claim is reported as unattributed.
+Sessions link to changes by the change ID from `prepare` first, then by PR link, branch, or a PR URL in the
+conversation. A change with no linked session has no operator row: unknown, not zero.
 
 Rows go to `~/.local/share/tink-substrate/ledger/changes.jsonl` and hold no prompt text.
 
