@@ -122,7 +122,10 @@ python3 -m tink_substrate ledger report
 prompt you type is credited with the gap since the agent's last activity, capped at C minutes (2, 5 and 10 are all
 kept). Parallel sessions never count a minute twice, and time no change can claim is reported as unattributed.
 Sessions link to changes by the change ID from `prepare` first, then by PR link, branch, or a PR URL in the
-conversation. A change with no linked session has no operator row: unknown, not zero.
+conversation. A change with no linked session has no operator row: unknown, not zero. The same pass records each change's tokens
+(OpenTelemetry names), the dollars harnesses themselves report (Codex reports none, so its share stays unknown), the
+harnesses and models that worked on it, and whether each touch was the opening prompt, an answer to the agent, your
+own steering, or after the merge.
 
 Rows go to `~/.local/share/tink-substrate/ledger/changes.jsonl` and hold no prompt text.
 

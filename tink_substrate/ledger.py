@@ -219,6 +219,30 @@ def operator_view(rows, unattributed):
     return lines
 
 
+def attention_view(merged):
+    """View 2: which kind of touch takes the operator's attention, how heavy the process is, and what changes cost."""
+    phases = {}
+    for row in merged:
+        for name, count in ((row.get('operator') or {}).get('phases') or {}).items():
+            phases[name] = phases.get(name, 0) + count
+    total = sum(phases.values())
+    touched = sum(bool((row.get('operator') or {}).get('phases')) for row in merged)
+    split = ('  '.join(f'{name} {100 * count / total:.0f}%' for name, count in sorted(phases.items()))
+             if total and touched >= MIN_CELL else '—')
+    sized = [row['size'] for row in merged if row.get('size')]
+    product = sum(s['product_add'] + s['product_del'] for s in sized)
+    process = sum(s['process_lines'] for s in sized)
+    priced = [row['cost']['llm.cost.total'] for row in merged
+              if (row.get('cost') or {}).get('llm.cost.total') is not None]
+    tokens = [row['cost']['gen_ai.usage.output_tokens'] for row in merged if row.get('cost')]
+    return ['View 2: where attention goes',
+            f'  touches by kind: {split}',
+            f'  process lines per product line {process / product:.2f}' if product and len(sized) >= MIN_CELL
+            else '  process lines per product line —',
+            f'  median reported $ per change {cell(priced, lambda v: f"{statistics.median(v):.2f}")} (n={len(priced)})',
+            f'  median output tokens per change {cell(tokens, lambda v: f"{statistics.median(v):.0f}")} (n={len(tokens)})']
+
+
 def report(rows):
     unattributed = {change.split('/', 1)[1]: row['unattributed'] for change, row in rows.items() if row.get('unattributed')}
     rows = {change: row for change, row in rows.items() if 'outcome' in row}
@@ -233,6 +257,7 @@ def report(rows):
         group = weeks[week]
         lines.append(f'  {week}  merged {len(group)}  lead {cell([r["times"]["lead_hours"] for r in group], median)}')
     lines += operator_view(rows, unattributed)
+    lines += attention_view(merged)
     reverted = sum(bool(row['outcome']['reverted_by']) for row in merged)
     share = lambda values: f'{100 * sum(values) / len(values):.0f}%'
     lines += ['View 3: quality',
