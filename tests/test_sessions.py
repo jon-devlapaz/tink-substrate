@@ -116,7 +116,9 @@ class SessionsTest(unittest.TestCase):
         operator = self.rows()['o/r#1']['operator']
         self.assertEqual(operator['touches'], 3)
         self.assertEqual(operator['minutes'], {'c2': 4.0, 'c5': 7.0, 'c10': 12.0})
-        self.assertEqual(operator['sessions'], [{'harness': 'claude', 'id': 's', 'link': 'branch', 'role': 'interactive'}])
+        self.assertEqual(operator['sessions'], [{'harness': 'claude', 'id': 's', 'link': 'branch', 'role': 'interactive'},
+                                                {'harness': 'claude', 'id': 's/subagents/agent-1', 'link': 'branch',
+                                                 'role': 'launched'}])
 
     def test_parallel_sessions_split_overlapping_minutes(self):
         write(self.claude / 'p' / 'a.jsonl', [claude_human(0), claude_agent(1), claude_human(5)])
@@ -238,6 +240,31 @@ class SessionsTest(unittest.TestCase):
         self.assertEqual(row['cost']['gen_ai.usage.input_tokens'], 120)
         self.assertEqual(row['cost']['gen_ai.usage.output_tokens'], 12)
         self.assertEqual(row['config']['models_seen']['launched'], ['gpt-z@high'])
+
+    def test_claude_subagent_cost_counts_and_streamed_usage_keeps_the_final_count(self):
+        write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4)])
+        partial = claude_usage(2, 'm1')
+        partial['message']['usage'] = {**partial['message']['usage'], 'output_tokens': 1}
+        write(self.claude / 'p' / 's' / 'subagents' / 'agent-1.jsonl', [
+            {**partial, 'gitBranch': 'main'}, {**claude_usage(2, 'm1'), 'gitBranch': 'main'}])
+        self.run_sweep()
+        cost = self.rows()['o/r#1']['cost']
+        self.assertEqual(cost['gen_ai.usage.output_tokens'], 5)  # the final count, not the streamed 1
+        self.assertEqual(self.rows()['o/r#1']['operator']['touches'], 2)  # the subagent adds no touches
+
+    def test_forked_pi_session_does_not_count_copied_history_twice(self):
+        def turn(entry_id, minute, role, extra=None):
+            return {'type': 'message', 'id': entry_id, 'timestamp': at(minute),
+                    'message': {'role': role, 'content': [{'type': 'text', 'text': 'https://github.com/o/r/pull/3'}],
+                                **(extra or {})}}
+        spend = {'model': 'gpt-y', 'usage': {'input': 10, 'output': 1, 'cost': {'total': 1.0}}}
+        history = [turn('u1', 0, 'user'), turn('a1', 1, 'assistant', spend), turn('u2', 4, 'user'),
+                   turn('a2', 5, 'assistant', spend)]
+        write(self.pi / '--w--' / '2026-a.jsonl', [{'type': 'session', 'id': 'a', 'timestamp': at(0)}, *history])
+        write(self.pi / '--w--' / '2026-b.jsonl', [{'type': 'session', 'id': 'b', 'timestamp': at(6)}, *history,
+                                                   turn('u3', 8, 'user'), turn('a3', 9, 'assistant', spend)])
+        self.run_sweep()
+        self.assertEqual(self.rows()['o/r#3']['cost']['llm.cost.total'], 3.0)
 
     def test_codex_child_agent_cost_follows_its_parent(self):
         codex_session(self.codex, 'parent', 'tink/feature')

@@ -25,7 +25,7 @@ CAPS = (2, 5, 10)
 HOME = Path.home()
 DEFAULT_DIRS = {'claude': HOME / '.claude/projects', 'codex': HOME / '.codex/sessions', 'pi': HOME / '.pi/agent/sessions'}
 DEFAULT_SNAPSHOTS = HOME / '.local/share/tink-substrate/ledger/transcripts'
-GLOBS = {'claude': '*/*.jsonl', 'codex': '*/*/*/*.jsonl', 'pi': '*/*.jsonl'}  # Claude subagents sit one level deeper
+GLOBS = {'claude': ('*/*.jsonl', '*/*/subagents/*.jsonl'), 'codex': ('*/*/*/*.jsonl',), 'pi': ('*/*.jsonl',)}
 PR_URL = re.compile(r'github\.com/([\w.-]+/[\w.-]+)/pull/(\d+)')
 STAMP = re.compile(r'(?:^|\n)(?:Tink-Change|change): (' + CHANGE_ID.pattern + r')\b')
 TRUNK = {'main', 'master', 'HEAD', ''}
@@ -70,40 +70,52 @@ def text_of(content):
 
 def read_claude(entries, sid):
     found = session('claude', sid)
-    messages = set()
+    messages, questions = {}, set()
     for entry in entries:
         kind, stamp = entry['type'], entry.get('timestamp')
         if kind == 'pr-link':
             found['pr_links'].add(f"{entry['prRepository']}#{entry['prNumber']}")
         if entry.get('gitBranch') and stamp:  # a session can switch branches; keep each switch
             found['branches'].append((when(stamp), entry['gitBranch']))
-        if kind == 'cost-state':
-            found['dollars'] = entry.get('totalCostUSD')
+        if entry.get('entrypoint') == 'sdk-cli':  # `claude -p` or the Agent SDK: nobody at the keyboard
+            found['launched'] = True
+        if kind == 'cost-state':  # Claude flags totals it could not price; those stay unknown
+            found['dollars'] = None if entry.get('hasUnknownModelCost') else entry.get('totalCostUSD')
         if kind == 'assistant':
             message, moment = entry['message'], instant(stamp)
             found['activity'].append(moment)
             found['version'] = entry.get('version') or found['version']
             text = text_of(message['content'])
             evidence(found, text)
-            if asks(text) or any(isinstance(b, dict) and b.get('name') == 'AskUserQuestion' for b in message['content']):
+            for block in message['content']:
+                if isinstance(block, dict) and block.get('name') == 'AskUserQuestion':
+                    questions.add(block.get('id'))
+                    found['asked'].add(moment)
+            if asks(text):
                 found['asked'].add(moment)
             spent = message.get('usage')
-            if spent and message.get('id') not in messages:  # streamed lines repeat one message's usage
-                messages.add(message.get('id'))
+            if spent:
+                # Streamed lines repeat one message's usage, and early copies can hold partial counts: keep the largest.
                 cache_read, cache_write = spent.get('cache_read_input_tokens', 0), spent.get('cache_creation_input_tokens', 0)
-                usage(found, moment, message.get('model'), None, {
-                    'input': spent.get('input_tokens', 0) + cache_read + cache_write, 'output': spent.get('output_tokens', 0),
-                    'cache_read': cache_read, 'cache_write': cache_write,
-                    'reasoning': (spent.get('output_tokens_details') or {}).get('thinking_tokens', 0)})
+                tokens = {'input': spent.get('input_tokens', 0) + cache_read + cache_write,
+                          'output': spent.get('output_tokens', 0), 'cache_read': cache_read, 'cache_write': cache_write,
+                          'reasoning': (spent.get('output_tokens_details') or {}).get('thinking_tokens', 0)}
+                key = message.get('id') or id(entry)
+                if key not in messages or tokens['output'] > messages[key][1]['output']:
+                    messages[key] = (moment, tokens, message.get('model'))
         elif kind == 'user':
             content = entry['message']['content']
             origin = entry.get('origin')
-            human = (not entry.get('isMeta') and not (isinstance(content, list) and any(
-                isinstance(b, dict) and b.get('type') == 'tool_result' for b in content))
-                and (origin.get('kind') == 'human' if isinstance(origin, dict) else entry.get('promptSource') != 'system'))
-            if human:
+            results = [b for b in content if isinstance(b, dict) and b.get('type') == 'tool_result'] \
+                if isinstance(content, list) else []
+            if any(b.get('tool_use_id') in questions for b in results):  # the operator answering the agent's question
+                found['humans'].append(instant(stamp))
+            elif (not entry.get('isMeta') and not results and (origin.get('kind') == 'human' if isinstance(origin, dict)
+                                                              else entry.get('promptSource') != 'system')):
                 found['humans'].append(instant(stamp))
                 evidence(found, text_of(content))
+    for moment, tokens, model in messages.values():
+        usage(found, moment, model, None, tokens)
     return found
 
 
@@ -162,10 +174,16 @@ def read_codex(entries, sid):
     return found
 
 
-def read_pi(entries, sid):
+def read_pi(entries, sid, copied=None):
+    """copied: entry IDs already read; a forked Pi session repeats its source's history under the same IDs."""
     found = session('pi', sid)
     effort = None
+    copied = set() if copied is None else copied
     for entry in entries:
+        if entry.get('id') and entry['type'] != 'session':
+            if entry['id'] in copied:
+                continue
+            copied.add(entry['id'])
         if entry['type'] == 'session':
             found['id'] = entry.get('id', sid)
             found['version'] = str(entry.get('version'))
@@ -202,20 +220,26 @@ READERS = {'claude': read_claude, 'codex': read_codex, 'pi': read_pi}
 
 
 def transcript(name):
-    """False for macOS resource forks and for child-agent records (Claude subagents, Pi delegate and other *_transcript files)."""
-    return (name.suffix == '.jsonl' and not name.name.startswith('._') and 'subagents' not in name.parts
-            and not name.stem.endswith('_transcript'))  # Pi child agents: _delegate_, _researcher_, ...)
+    """False for macOS resource forks and Pi child-agent records (`*_transcript`, a different format whose cost is
+    not read yet). Claude subagents are kept: they cost money for their parent's change."""
+    return name.suffix == '.jsonl' and not name.name.startswith('._') and not name.stem.endswith('_transcript')
+
+
+def child_name(path):
+    """A Claude subagent file is named `<parent session>/subagents/<agent>`, which keeps its parent findable."""
+    return f'{path.parent.parent.name}/subagents/{path.stem}' if path.parent.name == 'subagents' else path.stem
 
 
 def transcripts(dirs, snapshots):
     """(harness, name, lines) for each transcript. Live folders first; snapshots fill in what has been deleted."""
     seen = set()
     for harness, directory in dirs.items():
-        for path in sorted(Path(directory).glob(GLOBS[harness])) if directory else ():
+        paths = sorted(p for pattern in GLOBS[harness] for p in Path(directory).glob(pattern)) if directory else ()
+        for path in paths:
             if not transcript(path):
                 continue
             seen.add((harness, path.name))
-            yield harness, path.stem, path.read_text(errors='replace').splitlines()
+            yield harness, child_name(path), path.read_text(errors='replace').splitlines()
     for archive in sorted(Path(snapshots).glob('*.tgz'), reverse=True) if snapshots else ():  # newest copy wins
         harness = {'claude-projects': 'claude', 'codex-sessions': 'codex', 'pi-sessions': 'pi'}.get(
             archive.name.rsplit('-', 2)[0])
@@ -227,7 +251,7 @@ def transcripts(dirs, snapshots):
                 if not member.isfile() or not transcript(name) or (harness, name.name) in seen:
                     continue
                 seen.add((harness, name.name))
-                yield harness, name.stem, bundle.extractfile(member).read().decode(errors='replace').splitlines()
+                yield harness, child_name(name), bundle.extractfile(member).read().decode(errors='replace').splitlines()
 
 
 def link(found, rows, by_id):
@@ -371,7 +395,7 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
     stamps = [row['change_id'] for row in rows.values() if row.get('change_id')]
     by_id = {row['change_id']: change for change, row in rows.items()  # an ID two changes share links neither
              if row.get('change_id') and stamps.count(row['change_id']) == 1}
-    everyone, skipped = [], 0
+    everyone, skipped, copied = [], 0, set()
     for harness, name, lines in transcripts({'claude': claude, 'codex': codex, 'pi': pi}, snapshots):
         try:
             lines = [line for line in lines if line.strip()]
@@ -380,7 +404,9 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
                 entries.append(json.loads(lines[-1])) if lines else None
             except ValueError:
                 pass  # a live transcript can end in a line still being written
-            found = READERS[harness](entries, name)
+            found = read_pi(entries, name, copied) if harness == 'pi' else READERS[harness](entries, name)
+            if '/subagents/' in name:  # a Claude subagent: launched by its parent session
+                found['launched'], found['parent'] = True, name.split('/')[0]
         except (ValueError, KeyError, TypeError, AttributeError):
             skipped += 1
             continue
@@ -388,10 +414,14 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
             found['links'] = link(found, rows, by_id)
             everyone.append(found)
     by_session = {(found['harness'], found['id']): found for found in everyone}
-    for found in everyone:  # child agents work for their parent's changes
-        parent = by_session.get((found['harness'], found['parent']))
-        if parent and not found['links']:
-            found['links'] = {change: 'parent' for change in parent['links']}
+    changed = True
+    while changed:  # child agents work for their parent's changes, however deep the nesting
+        changed = False
+        for found in everyone:
+            parent = by_session.get((found['harness'], found['parent']))
+            if parent and parent['links'] and not found['links']:
+                found['links'] = {change: 'parent' for change in parent['links']}
+                changed = True
     talked = [found for found in everyone if not found['launched'] and found['humans']]
 
     minutes = {cap: {} for cap in CAPS}
