@@ -14,7 +14,7 @@ import subprocess
 from . import __version__
 
 DEFAULT_LEDGER = Path.home() / '.local/share/tink-substrate/ledger/changes.jsonl'
-PROCESS_PATH = re.compile(r'(^|/)runs/')
+PROCESS_PATH = re.compile(r'runs/')  # matched at the repository root only
 PR_FIELDS = ('number,title,state,createdAt,mergedAt,closedAt,isDraft,headRefName,baseRefName,'
              'mergeCommit,reviews,body')  # commits are fetched per PR: listing them exceeds GitHub's node budget
 MIN_CELL = 5
@@ -52,16 +52,22 @@ def size(clone, merge, commits=()):
     """Lines added and deleted by the change, with run records counted apart. None when the commit is not local."""
     if not merge:
         return None
-    result = subprocess.run(['git', '-C', str(clone), 'diff', '--numstat', '--no-renames', base(clone, merge, commits),
-                             merge], capture_output=True, text=True)
-    if result.returncode:
+    output = git_out(clone, 'diff', '--numstat', '-z', '-M', base(clone, merge, commits), merge)
+    if output is None:
         return None
     added = deleted = files = process = 0
-    for line in result.stdout.splitlines():
-        add, delete, path = line.split('\t', 2)
+    # -z: "add<TAB>del<TAB>path<NUL>", or for a rename "add<TAB>del<TAB><NUL>old<NUL>new<NUL>"
+    fields = iter(output.split('\0'))
+    for entry in fields:
+        if not entry:
+            continue
+        add, delete, path = entry.split('\t', 2)
+        if not path:
+            next(fields)
+            path = next(fields)
         add, delete = int(add) if add != '-' else 0, int(delete) if delete != '-' else 0
         files += 1
-        if PROCESS_PATH.search(path):
+        if PROCESS_PATH.match(path):
             process += add + delete
         else:
             added, deleted = added + add, deleted + delete
@@ -72,17 +78,18 @@ def review(pr, comments):
     """A round is a reviewed commit that a later commit replaced. Each review names the commit it saw, so this does
     not depend on when commits were made or pushed."""
     final = pr['commits'][-1]['oid'] if pr['commits'] else None
-    reviewed = {(r.get('commit') or {}).get('oid') for r in pr['reviews']} - {None, final}
+    reviewed = {(r.get('commit') or {}).get('oid') for r in pr['reviews'] if r.get('state') != 'PENDING'} - {None, final}
     return {'rounds': len(reviewed), 'p1': sum('P1 Badge' in c.get('body', '') for c in comments)}
 
 
 def observe(repo, clone, prs, comments_for):
     reverts = {}
-    for pr in prs:
+    merged_prs = [pr for pr in prs if pr.get('mergedAt')]
+    for pr in merged_prs:
         for target in re.findall(r'Reverts ' + re.escape(repo) + r'#(\d+)', pr.get('body') or ''):
             reverts[int(target)] = f'{repo}#{pr["number"]}'
     titles = {pr['title']: pr['number'] for pr in prs}
-    for pr in prs:
+    for pr in merged_prs:
         match = re.fullmatch(r'Revert "(.*)"', pr['title'])
         if match and match.group(1) in titles:
             reverts.setdefault(titles[match.group(1)], f'{repo}#{pr["number"]}')

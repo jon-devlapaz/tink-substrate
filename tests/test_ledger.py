@@ -41,8 +41,13 @@ class LedgerTest(unittest.TestCase):
         (self.repo / 'README.md').write_text('base\n')
         git(self.repo, 'add', '-A')
         git(self.repo, 'commit', '-qm', 'base')
-        git(self.repo, 'checkout', '-qb', 'feature')
         (self.repo / 'src').mkdir()
+        (self.repo / 'docs').mkdir()
+        (self.repo / 'docs' / 'moved.md').write_text(''.join(f'keep {i}\n' for i in range(30)))
+        git(self.repo, 'add', '-A')
+        git(self.repo, 'commit', '-qm', 'base docs')
+        git(self.repo, 'checkout', '-qb', 'feature')
+        git(self.repo, 'mv', 'docs/moved.md', 'src/moved.md')  # a pure rename adds no lines
         (self.repo / 'src' / 'a.py').write_text(''.join(f'line {i}\n' for i in range(10)))
         (self.repo / 'runs' / 'r1').mkdir(parents=True)
         (self.repo / 'runs' / 'r1' / 'log.md').write_text(''.join(f'log {i}\n' for i in range(20)))
@@ -117,7 +122,7 @@ class LedgerTest(unittest.TestCase):
         rows = self.rows()
         self.assertEqual(sorted(rows), ['o/r#1', 'o/r#2', 'o/r#3', 'o/r#4'])
         first = rows['o/r#1']
-        self.assertEqual(first['size'], {'product_add': 10, 'product_del': 0, 'files': 2, 'process_lines': 20})
+        self.assertEqual(first['size'], {'product_add': 10, 'product_del': 0, 'files': 3, 'process_lines': 20})
         self.assertEqual(first['outcome'], {'state': 'merged', 'reverted_by': 'o/r#2'})
         self.assertEqual(first['times']['lead_hours'], 4.0)
         self.assertEqual(first['vcs'], {'vcs.repository.name': 'o/r', 'vcs.change.id': '1',
