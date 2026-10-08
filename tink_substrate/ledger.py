@@ -31,12 +31,29 @@ def when(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00')) if value else None
 
 
-def size(clone, merge):
-    """Lines added and deleted by the merge, with run records counted apart. None when the commit is not local."""
+def git_out(clone, *args):
+    result = subprocess.run(['git', '-C', str(clone), *args], capture_output=True, text=True)
+    return None if result.returncode else result.stdout
+
+
+def base(clone, merge, commits):
+    """The commit the change started from. A merge commit or squash adds one commit on top of its first parent;
+    a rebase merge replays every PR commit, recognised by matching their subjects in order."""
+    parents = (git_out(clone, 'rev-list', '--parents', '-n1', merge) or '').split()
+    count = len(commits)
+    if len(parents) == 2 and count > 1:
+        subjects = (git_out(clone, 'log', '--format=%s', f'-n{count}', merge) or '').splitlines()[::-1]
+        if subjects == [c.get('messageHeadline') for c in commits]:
+            return f'{merge}~{count}'
+    return f'{merge}^1'
+
+
+def size(clone, merge, commits=()):
+    """Lines added and deleted by the change, with run records counted apart. None when the commit is not local."""
     if not merge:
         return None
-    result = subprocess.run(['git', '-C', str(clone), 'diff', '--numstat', f'{merge}^1', merge],
-                            capture_output=True, text=True)
+    result = subprocess.run(['git', '-C', str(clone), 'diff', '--numstat', '--no-renames', base(clone, merge, commits),
+                             merge], capture_output=True, text=True)
     if result.returncode:
         return None
     added = deleted = files = process = 0
@@ -52,17 +69,11 @@ def size(clone, merge):
 
 
 def review(pr, comments):
-    """A round is a run of reviews that a later push answers. Pushes count from when the PR opened."""
-    opened = when(pr['createdAt'])
-    pushes = sorted(when(c['committedDate']) for c in pr['commits'])
-    reviews = sorted(when(r['submittedAt']) for r in pr['reviews'] if r.get('submittedAt'))
-    rounds, answered = 0, None
-    for push in pushes:
-        if any(r < push and (answered is None or r > answered) for r in reviews):
-            rounds += 1
-            answered = push
-    return {'rounds': rounds, 'p1': sum('P1 Badge' in c.get('body', '') for c in comments),
-            'pushes_after_open': sum(push > opened for push in pushes)}
+    """A round is a reviewed commit that a later commit replaced. Each review names the commit it saw, so this does
+    not depend on when commits were made or pushed."""
+    final = pr['commits'][-1]['oid'] if pr['commits'] else None
+    reviewed = {(r.get('commit') or {}).get('oid') for r in pr['reviews']} - {None, final}
+    return {'rounds': len(reviewed), 'p1': sum('P1 Badge' in c.get('body', '') for c in comments)}
 
 
 def observe(repo, clone, prs, comments_for):
@@ -86,7 +97,7 @@ def observe(repo, clone, prs, comments_for):
             'outcome': {'state': state, 'reverted_by': reverts.get(pr['number'])},
             'times': {'created': pr['createdAt'], 'merged': pr.get('mergedAt'), 'closed': pr.get('closedAt'),
                       'lead_hours': round((merged - created).total_seconds() / 3600, 2) if merged else None},
-            'size': size(clone, merge) if merged else None,
+            'size': size(clone, merge, pr['commits']) if merged else None,
             'review': review(pr, comments_for(pr['number'])),
         }
         yield {'schema': 1, 'key': [change, 'backfill', 'gh', pr['number']], 'change': change,
@@ -126,7 +137,8 @@ def sweep(ledger_path, repos, comments=True):
             def comments_for(number):
                 if not comments:
                     return []
-                return json.loads(run_gh(['api', f'repos/{repo}/pulls/{number}/comments', '--paginate']) or '[]')
+                pages = json.loads(run_gh(['api', f'repos/{repo}/pulls/{number}/comments', '--paginate', '--slurp']))
+                return [comment for page in pages for comment in page]
             for line in observe(repo, clone, prs, comments_for):
                 if latest.get(json.dumps(line['key'])) == line['fields']:
                     continue

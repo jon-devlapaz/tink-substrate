@@ -4,7 +4,9 @@ Ways this could fail, written before the code:
 1. Process records (run folders) are counted as product lines, hiding process weight.
 2. Re-running the sweep duplicates rows, so counts double.
 3. A revert is missed, so a reverted change counts as useful.
-4. Review rounds count every review, not reviews followed by a new push.
+4. Review rounds count every review, not reviewed commits that a later commit replaced.
+8. A rebase merge is sized by its last commit only, not the whole change.
+9. Review comments spread over several pages are lost.
 5. A merge commit missing from the local clone crashes the sweep instead of recording unknown size.
 6. The sweep writes into the repositories it reads.
 7. The report shows numbers for cells with fewer than 5 changes (false precision).
@@ -54,12 +56,11 @@ class LedgerTest(unittest.TestCase):
             {'number': 1, 'title': 'Add a', 'state': 'MERGED', 'isDraft': False, 'body': '',
              'createdAt': '2026-10-05T10:00:00Z', 'mergedAt': '2026-10-05T14:00:00Z', 'closedAt': '2026-10-05T14:00:00Z',
              'headRefName': 'feature', 'baseRefName': 'main', 'mergeCommit': {'oid': self.merge},
-             'commits': [{'oid': 'c1', 'committedDate': '2026-10-05T09:00:00Z'},
-                         {'oid': 'c2', 'committedDate': '2026-10-05T12:00:00Z'},
-                         {'oid': 'c3', 'committedDate': '2026-10-05T13:00:00Z'}],
-             'reviews': [{'state': 'COMMENTED', 'submittedAt': '2026-10-05T11:00:00Z'},
-                         {'state': 'COMMENTED', 'submittedAt': '2026-10-05T11:30:00Z'},
-                         {'state': 'APPROVED', 'submittedAt': '2026-10-05T13:30:00Z'}]},
+             'commits': [{'oid': 'c1', 'messageHeadline': 'one'}, {'oid': 'c2', 'messageHeadline': 'two'},
+                         {'oid': 'c3', 'messageHeadline': 'three'}],
+             'reviews': [{'state': 'COMMENTED', 'commit': {'oid': 'c1'}},
+                         {'state': 'COMMENTED', 'commit': {'oid': 'c1'}},
+                         {'state': 'APPROVED', 'commit': {'oid': 'c3'}}]},
             {'number': 2, 'title': 'Revert "Add a"', 'state': 'MERGED', 'isDraft': False,
              'body': 'Reverts o/r#1', 'createdAt': '2026-10-06T10:00:00Z', 'mergedAt': '2026-10-06T11:00:00Z',
              'closedAt': '2026-10-06T11:00:00Z', 'headRefName': 'revert-1', 'baseRefName': 'main',
@@ -68,7 +69,20 @@ class LedgerTest(unittest.TestCase):
              'createdAt': '2026-10-06T10:00:00Z', 'mergedAt': None, 'closedAt': '2026-10-06T12:00:00Z',
              'headRefName': 'x', 'baseRefName': 'main', 'mergeCommit': None, 'commits': [], 'reviews': []},
         ]
-        self.comments = {1: [{'body': '![P1 Badge](x) fix this'}, {'body': '![P2 Badge](x) nit'}], 2: [], 3: []}
+        # a rebase-merged PR: two commits replayed on main, no merge commit
+        for name in ('first', 'second'):
+            (self.repo / 'src' / f'{name}.py').write_text('x\n')
+            git(self.repo, 'add', '-A')
+            git(self.repo, 'commit', '-qm', name)
+        self.prs.append({'number': 4, 'title': 'Rebased', 'state': 'MERGED', 'isDraft': False, 'body': '',
+                         'createdAt': '2026-10-06T10:00:00Z', 'mergedAt': '2026-10-06T10:30:00Z',
+                         'closedAt': '2026-10-06T10:30:00Z', 'headRefName': 'r', 'baseRefName': 'main',
+                         'mergeCommit': {'oid': git(self.repo, 'rev-parse', 'HEAD')},
+                         'commits': [{'oid': 'a', 'messageHeadline': 'first'}, {'oid': 'b', 'messageHeadline': 'second'}],
+                         'reviews': []})
+        # gh api --paginate --slurp returns one array per page
+        self.comments = {1: [[{'body': '![P1 Badge](x) fix this'}], [{'body': '![P1 Badge](x) and this'}]],
+                         2: [], 3: [], 4: []}
 
         def fake_gh(args):
             if args[:2] == ['pr', 'list']:
@@ -76,6 +90,7 @@ class LedgerTest(unittest.TestCase):
             if args[:2] == ['pr', 'view']:
                 return json.dumps({'commits': self.prs[int(args[2]) - 1]['commits']})
             if args[0] == 'api':
+                self.assertIn('--slurp', args)
                 number = int(args[1].split('/')[-2])
                 return json.dumps(self.comments[number])
             raise AssertionError(args)
@@ -100,7 +115,7 @@ class LedgerTest(unittest.TestCase):
         code, _ = self.sweep()
         self.assertEqual(code, 0)
         rows = self.rows()
-        self.assertEqual(sorted(rows), ['o/r#1', 'o/r#2', 'o/r#3'])
+        self.assertEqual(sorted(rows), ['o/r#1', 'o/r#2', 'o/r#3', 'o/r#4'])
         first = rows['o/r#1']
         self.assertEqual(first['size'], {'product_add': 10, 'product_del': 0, 'files': 2, 'process_lines': 20})
         self.assertEqual(first['outcome'], {'state': 'merged', 'reverted_by': 'o/r#2'})
@@ -112,10 +127,13 @@ class LedgerTest(unittest.TestCase):
     def test_review_rounds_count_reviews_followed_by_a_push(self):
         self.sweep()
         review = self.rows()['o/r#1']['review']
-        # two reviews before the 12:00 push are one round; the 13:30 approval has no push after it
-        self.assertEqual(review['rounds'], 1)
-        self.assertEqual(review['p1'], 1)
-        self.assertEqual(review['pushes_after_open'], 2)
+        # two reviews of c1 are one round; the approval of the final commit c3 is not
+        self.assertEqual(review, {'rounds': 1, 'p1': 2})
+
+    def test_rebase_merge_is_sized_as_the_whole_change(self):
+        self.sweep()
+        self.assertEqual(self.rows()['o/r#4']['size'],
+                         {'product_add': 2, 'product_del': 0, 'files': 2, 'process_lines': 0})
 
     def test_missing_merge_commit_records_unknown_size(self):
         self.sweep()
@@ -142,7 +160,7 @@ class LedgerTest(unittest.TestCase):
         self.assertIn('View 3', out)
         self.assertIn('—', out)  # 2 merged changes: below n=5, no medians shown
         self.assertNotIn('4.0', out)
-        self.assertIn('merged 2', out)
+        self.assertIn('merged 3', out)
         self.assertIn('reverted 1', out)
 
 
