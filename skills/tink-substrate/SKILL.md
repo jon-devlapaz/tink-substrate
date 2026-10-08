@@ -73,6 +73,12 @@ work pauses. After editing the record, refresh the running view by requesting
 credentials or tools are specific obstacles to report, not reasons to silently
 skip a required check or invent success.
 
+## Run an approved sequence
+
+When the user wants several slices done in a row, follow `docs/run-a-sequence.md`: draft every brief first, get one
+approval that names what it covers, keep a sequence record, merge each PR once checks pass and no P0/P1 is open, stop only for the listed
+reasons, and finish with one end report. Don't ask whether to continue between slices.
+
 ## Deliver and learn
 
 Follow the target's installed SDLC for implementation, verification and independent

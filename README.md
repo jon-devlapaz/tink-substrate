@@ -142,6 +142,13 @@ own steering, or after the merge.
 
 Rows go to `~/.local/share/tink-substrate/ledger/changes.jsonl` and hold no prompt text.
 
+## Several changes in a row
+
+If you ask for several slices at once, the agent drafts every brief first and asks you once. Your approval names what
+it covers (the briefs, merging, or both). It then runs the slices back to back, merges each PR once checks pass and no
+P0/P1 finding is open, stops only for the reasons listed in [Run an approved sequence](docs/run-a-sequence.md), and hands
+back one end report. Without that standing approval, you still decide each merge.
+
 ## One view of the selected change
 
 `python3 -m tink_substrate surface --json` prints one read-only JSON for the selected change. It covers what the change
