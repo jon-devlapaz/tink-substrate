@@ -106,6 +106,19 @@ Archives contain committed run files and source. They exclude ignored files,
 full agent conversations and costs, and are not an off-machine backup.
 See [Finish a change](docs/finish-a-change.md) for details and manual commands.
 
+## Measure the factory
+
+`ledger sweep` records one row per pull request from GitHub and your local clones: outcome, lead time, product
+lines apart from run records, review rounds, P1 findings and reverts. It only reads the repositories, and running it
+again adds nothing new. `ledger report` prints weekly throughput and quality; cells with fewer than 5 changes show —.
+
+```bash
+python3 -m tink_substrate ledger sweep --repo owner/name=~/path/to/clone
+python3 -m tink_substrate ledger report
+```
+
+Rows go to `~/.local/share/tink-substrate/ledger/changes.jsonl` and hold no prompt text.
+
 ## For contributors
 
 Running from its checkout needs no package installation. To install a reviewed

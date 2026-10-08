@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from . import __version__
 from .archive import archive_run
+from . import ledger
 from .prepare import prepare_run, workflow, DEFAULT_PACKAGES
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
@@ -50,8 +51,24 @@ def main(argv=None):
     work.add_argument('--checkout', type=Path, required=True)
     work.add_argument('--run', required=True)
     work.add_argument('arguments', nargs=argparse.REMAINDER)
+    book = commands.add_parser('ledger', help='record one row per change from GitHub and git, or report it')
+    book_commands = book.add_subparsers(dest='ledger_command', required=True)
+    sweep = book_commands.add_parser('sweep', help='append observations for every pull request (read-only on repos)')
+    sweep.add_argument('--repo', action='append', required=True, metavar='OWNER/NAME=PATH')
+    sweep.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
+    sweep.add_argument('--no-comments', action='store_true', help='skip fetching review comments (no P1 counts)')
+    show = book_commands.add_parser('report', help='print throughput and quality views')
+    show.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     args = parser.parse_args(argv)
     try:
+        if args.command == 'ledger':
+            if args.ledger_command == 'sweep':
+                repos = [(name, Path(path).expanduser()) for name, path in (r.split('=', 1) for r in args.repo)]
+                added = ledger.sweep(args.ledger, repos, comments=not args.no_comments)
+                print(json.dumps({'ledger': str(args.ledger), 'added': added}))
+            else:
+                print(ledger.report(ledger.fold(ledger.read(args.ledger))))
+            return 0
         if args.command == 'prepare':
             record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind, args.upgrade_sdlc)
             print(json.dumps(record, indent=2))
