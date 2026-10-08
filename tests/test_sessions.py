@@ -232,6 +232,24 @@ class SessionsTest(unittest.TestCase):
         self.assertEqual(cost['gen_ai.usage.input_tokens'], 200)
         self.assertIsNone(cost['llm.cost.total'])
 
+    def test_pi_cost_comes_from_its_own_per_message_dollars(self):
+        entries = [{'type': 'session', 'id': 'pi1', 'cwd': '/w', 'timestamp': at(0), 'version': 3},
+                   {'type': 'thinking_level_change', 'thinkingLevel': 'high', 'timestamp': at(0)}]
+        for minute in (0, 4):
+            entries += [{'type': 'message', 'timestamp': at(minute), 'message': {'role': 'user', 'content': [
+                {'type': 'text', 'text': 'https://github.com/o/r/pull/3'}]}},
+                {'type': 'message', 'timestamp': at(minute + 1), 'message': {
+                    'role': 'assistant', 'model': 'gpt-y', 'content': [{'type': 'text', 'text': 'Ready?'}],
+                    'usage': {'input': 10, 'output': 2, 'cacheRead': 30, 'cacheWrite': 0, 'reasoning': 1,
+                              'cost': {'total': 0.25}}}}]
+        write(self.pi / '--w--' / 'pi1.jsonl', entries)
+        self.run_sweep()
+        row = self.rows()['o/r#3']
+        self.assertEqual(row['cost']['llm.cost.total'], 0.5)
+        self.assertEqual(row['cost']['gen_ai.usage.input_tokens'], 80)
+        self.assertEqual(row['config']['models_seen']['interactive'], ['gpt-y@high'])
+        self.assertEqual(row['operator']['phases'], {'intake': 1, 'agent_asked': 1})
+
     def test_touch_phases(self):
         write(self.claude / 'p' / 's.jsonl', [
             claude_human(0), claude_usage(1, 'a', 'Which file should I change?'), claude_human(3),

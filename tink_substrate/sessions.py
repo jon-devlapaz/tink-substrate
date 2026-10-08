@@ -171,11 +171,11 @@ def read_pi(entries, sid):
                 text = text_of(message['content'])
                 evidence(found, text)
                 if asks(text):
-                    found['asked'].add(instant)
+                    found['asked'].add(moment)
                 spent = message.get('usage')
                 if spent:
                     cache_read, cache_write = spent.get('cacheRead', 0), spent.get('cacheWrite', 0)
-                    usage(found, instant, message.get('model'), effort, {
+                    usage(found, moment, message.get('model'), effort, {
                         'input': spent.get('input', 0) + cache_read + cache_write, 'output': spent.get('output', 0),
                         'cache_read': cache_read, 'cache_write': cache_write, 'reasoning': spent.get('reasoning', 0)},
                         (spent.get('cost') or {}).get('total'))
