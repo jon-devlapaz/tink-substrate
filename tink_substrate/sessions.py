@@ -222,11 +222,13 @@ def read_pi_child(entries, sid):
     found = session('pi', sid)
     found['launched'] = True
     for entry in entries:
-        if entry.get('recordType') != 'message' or entry.get('role') != 'assistant':
+        if entry.get('recordType') != 'message':
+            continue
+        evidence(found, entry.get('text') or '')  # the task it was given links it as well as its replies
+        if entry.get('role') != 'assistant':
             continue
         moment = instant(entry.get('timestamp'))
         found['activity'].append(moment)
-        evidence(found, entry.get('text') or '')
         spent = entry.get('usage')
         if spent:
             cache_read, cache_write = spent.get('cacheRead', 0), spent.get('cacheWrite', 0)
