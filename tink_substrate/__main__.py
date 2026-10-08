@@ -45,6 +45,7 @@ def main(argv=None):
     prepare.add_argument('--packages', type=Path, default=DEFAULT_PACKAGES)
     prepare.add_argument('--profile', choices=('light', 'full'), default='light')
     prepare.add_argument('--kind', choices=('feature', 'bug'), default='feature')
+    prepare.add_argument('--change', help='the change ID minted at intake (default: mint one)')
     prepare.add_argument('--upgrade-sdlc', action='store_true',
                          help="replace the target's different installed tink-sdlc; only when the user asks")
     work = commands.add_parser('workflow', help='use one run’s saved SDLC without ambient Tink or routing')
@@ -70,7 +71,7 @@ def main(argv=None):
                 print(ledger.report(ledger.fold(ledger.read(args.ledger))))
             return 0
         if args.command == 'prepare':
-            record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind, args.upgrade_sdlc)
+            record = prepare_run(args.checkout, args.run, args.packages, args.profile, args.kind, args.upgrade_sdlc, args.change)
             print(json.dumps(record, indent=2))
             return 0
         if args.command == 'workflow':

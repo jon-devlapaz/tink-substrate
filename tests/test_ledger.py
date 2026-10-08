@@ -14,6 +14,7 @@ Ways this could fail, written before the code:
 import contextlib
 import io
 import json
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -139,6 +140,25 @@ class LedgerTest(unittest.TestCase):
         self.sweep()
         self.assertEqual(self.rows()['o/r#4']['size'],
                          {'product_add': 2, 'product_del': 0, 'files': 2, 'process_lines': 0})
+
+    def test_change_id_is_read_from_the_pr_body_or_the_committed_run_record(self):
+        self.prs[3]['body'] = 'Does a thing.\n\nTink-Change: c261007k3xq'
+        (self.repo / 'runs' / 'r1' / 'tools.json').write_text(json.dumps({'change': 'c261008abcd'}))
+        git(self.repo, 'add', '-A')
+        git(self.repo, 'commit', '-qm', 'run record')
+        self.prs.append({**self.prs[3], 'number': 5, 'title': 'Stamped by run', 'body': '',
+                         'mergeCommit': {'oid': git(self.repo, 'rev-parse', 'HEAD')}, 'commits': []})
+        self.comments[5] = []
+        self.sweep()
+        rows = self.rows()
+        self.assertEqual(rows['o/r#4']['change_id'], 'c261007k3xq')
+        self.assertEqual(rows['o/r#5']['change_id'], 'c261008abcd')
+        self.assertIsNone(rows['o/r#1']['change_id'])
+
+    def test_minted_ids_are_short_dated_and_distinct(self):
+        ids = {ledger.mint() for _ in range(50)}
+        self.assertEqual(len(ids), 50)
+        self.assertTrue(all(re.fullmatch(r'c\d{6}[a-z2-7]{4}', i) for i in ids))
 
     def test_missing_merge_commit_records_unknown_size(self):
         self.sweep()

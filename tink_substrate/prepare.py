@@ -14,6 +14,7 @@ import sys
 import tempfile
 import uuid
 
+from .ledger import CHANGE_ID, mint
 from .package import install, check
 
 SOURCES = {
@@ -170,7 +171,8 @@ def local_records(checkout):
 
 def portable(record):
     """The committed run evidence: versions and checks, without machine paths."""
-    return {key: record[key] for key in ('schema', 'run', 'components', 'integrations', 'checked_at', 'compatibility')}
+    keys = ('schema', 'run', 'change', 'components', 'integrations', 'checked_at', 'compatibility')
+    return {key: record[key] for key in keys if key in record}  # runs prepared before change IDs have none
 
 
 def validate_record(checkout, run, record):
@@ -216,8 +218,10 @@ def preparation_lock(checkout):
         yield
 
 
-def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind='feature', upgrade_sdlc=False):
+def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind='feature', upgrade_sdlc=False, change=None):
     checkout = Path(checkout).resolve()
+    if change is not None and not CHANGE_ID.fullmatch(change):
+        raise ValueError('Invalid change ID')
     if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', run):
         raise ValueError('Invalid run name')
     if profile not in ('light', 'full') or kind not in ('feature', 'bug'):
@@ -276,7 +280,7 @@ def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind=
             if package.exists() and not path.exists():
                 shutil.rmtree(package)
             raise
-        record = {'schema': 1, 'checkout': str(checkout), 'run': run, 'package': str(package),
+        record = {'schema': 1, 'checkout': str(checkout), 'run': run, 'change': change or mint(), 'package': str(package),
                   'components': components, 'integrations': 'bundled-only',
                   'checked_at': datetime.now(timezone.utc).isoformat(), 'compatibility': smoke,
                   'workflow_digest': workflow_digest(checkout)}
@@ -322,9 +326,13 @@ def workflow(checkout, run, arguments):
         prefix = shlex.join([sys.executable, '-B', '-m', 'tink_substrate', 'workflow',
                              '--checkout', str(checkout), '--run', run, '--'])
         print(f'Prepared stage session prompt (start a new session in {checkout}):', flush=True)
+        if record.get('change'):
+            print(f"change: {record['change']}", flush=True)
         print(f'Perform stage {arguments[2]} for run {run}. Read its stages/ CONTEXT.md, '
               f'{checkout}/runs/{run}/handoff.md, {checkout}/runs/{run}/tools.json, and {package}/docs/automatic-tools.md. '
               f'Use {package} as the package directory and run SDLC commands through {prefix}. '
               'This run is bundled-only; optional global Tink and tink-route are disabled. '
-              'Use the stage outputs and human gates; preparation is not approval.', flush=True)
+              'Use the stage outputs and human gates; preparation is not approval.'
+              + (f" End each commit message and the PR body with the line `Tink-Change: {record['change']}`."
+                 if record.get('change') else ''), flush=True)
     return result
