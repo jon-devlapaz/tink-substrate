@@ -4,6 +4,9 @@ The agent owns these steps as part of each authorized Substrate run. Do them whe
 delivering a ready PR, without another reminder. These are completion instructions,
 not a background service or a replacement for the target repo's SDLC contracts.
 
+When the run is one slice of an approved sequence, also follow
+[Run an approved sequence](run-a-sequence.md): merge under its rule, then continue to the next slice.
+
 ## At PR-ready delivery
 
 1. Confirm the reviewed candidate, current verification, PR head and checks. Fix

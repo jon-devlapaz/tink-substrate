@@ -73,6 +73,12 @@ work pauses. After editing the record, refresh the running view by requesting
 credentials or tools are specific obstacles to report, not reasons to silently
 skip a required check or invent success.
 
+## Run an approved sequence
+
+When the user approves several slices at once, record the standing approval and run them back to back as
+`docs/run-a-sequence.md` describes: merge under the P1 rule, stop only for the listed reasons, and finish with one end
+report. Don't ask whether to continue between slices.
+
 ## Deliver and learn
 
 Follow the target's installed SDLC for implementation, verification and independent

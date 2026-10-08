@@ -117,7 +117,8 @@ Later approvals follow the same rule. If feedback extends the scope after review
 amend the brief and checklist, show the changed text to the user, and record
 approval of that text. A request such as "fix them" asks for the change; it does
 not approve wording the user has not seen. Merge only on authorization that the
-merging session received from the user directly. If it arrived through another
+merging session received from the user directly: either for that PR, or as a standing approval for a listed
+sequence of slices ([Run an approved sequence](run-a-sequence.md)). If it arrived through another
 agent, hand the merge back to the session that talks with the user.
 
 ## 4. Prepare planning in the target checkout
