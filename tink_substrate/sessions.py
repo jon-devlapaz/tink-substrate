@@ -12,7 +12,7 @@ their parent's links. Token names follow OpenTelemetry GenAI (input includes cac
 """
 
 import bisect
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
@@ -277,7 +277,13 @@ def credits(found, cap):
 def merge_timeline(intervals):
     """intervals: (start, end, {label: weight}). Each instant is split evenly between the intervals covering it.
     Seconds per (label, ISO week the time was spent in)."""
-    points = sorted({p for start, end, _ in intervals for p in (start, end)})
+    points = {p for start, end, _ in intervals for p in (start, end)}
+    for start, end, _ in intervals:  # cut at each Monday 00:00 UTC so time lands in the week it was spent
+        monday = datetime.fromtimestamp(start, timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        monday = (monday + timedelta(days=7 - monday.weekday())).timestamp()
+        if monday < end:
+            points.add(monday)
+    points = sorted(points)
     totals = {}
     for left, right in zip(points, points[1:]):
         covering = [labels for start, end, labels in intervals if start <= left and end >= right]
@@ -343,11 +349,18 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
     ledger_path = Path(ledger_path)
     existing = read(ledger_path)
     rows = {change: row for change, row in fold(existing).items() if 'outcome' in row}
-    by_id = {row['change_id']: change for change, row in rows.items() if row.get('change_id')}
+    stamps = [row['change_id'] for row in rows.values() if row.get('change_id')]
+    by_id = {row['change_id']: change for change, row in rows.items()  # an ID two changes share links neither
+             if row.get('change_id') and stamps.count(row['change_id']) == 1}
     everyone, skipped = [], 0
     for harness, name, lines in transcripts({'claude': claude, 'codex': codex, 'pi': pi}, snapshots):
         try:
-            entries = [json.loads(line) for line in lines if line.strip()]
+            lines = [line for line in lines if line.strip()]
+            entries = [json.loads(line) for line in lines[:-1]]
+            try:
+                entries.append(json.loads(lines[-1])) if lines else None
+            except ValueError:
+                pass  # a live transcript can end in a line still being written
             found = READERS[harness](entries, name)
         except (ValueError, KeyError, TypeError, AttributeError):
             skipped += 1

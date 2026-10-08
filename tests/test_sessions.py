@@ -302,6 +302,31 @@ class SessionsTest(unittest.TestCase):
         self.assertEqual(operator['minutes_by_week'], {'2026-W40': {'c2': 2.0, 'c5': 3.0, 'c10': 3.0}})
         self.assertIn('2026-W40', ledger.report(self.rows()))
 
+    def test_half_written_last_line_does_not_drop_the_session(self):
+        path = self.claude / 'p' / 's.jsonl'
+        write(path, [claude_human(0), claude_agent(1), claude_human(4)])
+        path.write_text(path.read_text() + '{"type": "assist')
+        summary = self.run_sweep()
+        self.assertEqual(summary['skipped'], 0)
+        self.assertEqual(self.rows()['o/r#1']['operator']['minutes']['c5'], 3.0)
+
+    def test_a_change_id_shared_by_two_changes_links_neither(self):
+        with self.ledger.open('a') as out:
+            out.write(json.dumps({'schema': 1, 'key': ['o/r#3', 'backfill', 'gh', 3], 'change': 'o/r#3',
+                                  'phase': 'backfill', 'at': at(300), 'by': 't',
+                                  'fields': {'change_id': 'c261007abcd'}}) + '\n')
+        write(self.claude / 'p' / 's.jsonl', [claude_human(0, 'change: c261007abcd', branch='main'),
+                                               claude_agent(1), claude_human(4, branch='main')])
+        self.run_sweep()
+        rows = self.rows()
+        self.assertNotIn('operator', rows['o/r#2'])
+        self.assertNotIn('operator', rows['o/r#3'])
+
+    def test_time_crossing_monday_is_split_between_weeks(self):
+        totals = sessions.merge_timeline([(datetime(2026, 10, 4, 23, 59, tzinfo=timezone.utc).timestamp(),
+                                           datetime(2026, 10, 5, 0, 1, tzinfo=timezone.utc).timestamp(), {'x': 1.0})])
+        self.assertEqual(totals, {('x', '2026-W40'): 60.0, ('x', '2026-W41'): 60.0})
+
     def test_no_prompt_text_and_rerun_is_idempotent(self):
         write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4)])
         self.run_sweep()
