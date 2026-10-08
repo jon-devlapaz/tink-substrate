@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 from . import __version__
 from .archive import archive_run
-from . import ledger, ledger_auto, sessions
+from . import ledger, ledger_auto, sessions, surface
 from .prepare import prepare_run, workflow, DEFAULT_PACKAGES
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
@@ -52,6 +52,9 @@ def main(argv=None):
     work.add_argument('--checkout', type=Path, required=True)
     work.add_argument('--run', required=True)
     work.add_argument('arguments', nargs=argparse.REMAINDER)
+    face = commands.add_parser('surface', help='print one read-only JSON for the selected change (for Tinkery and agents)')
+    face.add_argument('--json', action='store_true', required=True, help='the only format')
+    face.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     book = commands.add_parser('ledger', help='record one row per change from GitHub and git, or report it')
     book_commands = book.add_subparsers(dest='ledger_command', required=True)
     sweep = book_commands.add_parser('sweep', help='append observations for every pull request (read-only on repos)')
@@ -69,6 +72,9 @@ def main(argv=None):
     show.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     args = parser.parse_args(argv)
     try:
+        if args.command == 'surface':
+            print(json.dumps(surface.build(args.config, args.ledger), ensure_ascii=False))
+            return 0
         if args.command == 'ledger':
             if args.ledger_command == 'update':
                 result = ledger_auto.update(args.ledger_config)
