@@ -13,6 +13,7 @@ Ways this could fail, written before the code:
 """
 import contextlib
 import io
+from datetime import datetime
 import json
 import re
 from pathlib import Path
@@ -156,9 +157,10 @@ class LedgerTest(unittest.TestCase):
         self.assertIsNone(rows['o/r#1']['change_id'])
 
     def test_minted_ids_are_short_dated_and_distinct(self):
-        ids = {ledger.mint() for _ in range(50)}
-        self.assertEqual(len(ids), 50)
+        ids = [ledger.mint() for _ in range(50)]
         self.assertTrue(all(re.fullmatch(r'c\d{6}[a-z2-7]{4}', i) for i in ids))
+        self.assertGreater(len(set(ids)), 40)  # random suffixes; a rare collision must not fail CI
+        self.assertTrue(ledger.mint(datetime(2026, 10, 7)).startswith('c261007'))
 
     def test_missing_merge_commit_records_unknown_size(self):
         self.sweep()

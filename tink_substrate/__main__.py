@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 from . import __version__
 from .archive import archive_run
-from . import ledger
+from . import ledger, sessions
 from .prepare import prepare_run, workflow, DEFAULT_PACKAGES
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
@@ -58,12 +58,16 @@ def main(argv=None):
     sweep.add_argument('--repo', action='append', required=True, metavar='OWNER/NAME=PATH')
     sweep.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     sweep.add_argument('--no-comments', action='store_true', help='skip fetching review comments (no P1 counts)')
+    minutes = book_commands.add_parser('sessions', help='add operator minutes and touches from harness transcripts')
+    minutes.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     show = book_commands.add_parser('report', help='print throughput and quality views')
     show.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     args = parser.parse_args(argv)
     try:
         if args.command == 'ledger':
-            if args.ledger_command == 'sweep':
+            if args.ledger_command == 'sessions':
+                print(json.dumps(sessions.sweep(args.ledger)))
+            elif args.ledger_command == 'sweep':
                 repos = [(name, Path(path).expanduser()) for name, path in (r.split('=', 1) for r in args.repo)]
                 added = ledger.sweep(args.ledger, repos, comments=not args.no_comments)
                 print(json.dumps({'ledger': str(args.ledger), 'added': added}))
