@@ -128,6 +128,11 @@ the workflow wrapper in [Current tools for a new run](automatic-tools.md). Then
 follow the handoff and human review steps below. Skip manual initialization and
 `sdlc.py new` in this section. Use the wrapper for later SDLC commands too.
 
+`tools.json` also carries the run's change ID (`c` + date + 4 characters), minted at
+preparation or passed with `prepare --change`. Stage prompts start with `change: <id>`
+and ask for a `Tink-Change: <id>` line in commits and the PR body, so `ledger sweep`
+links the merged PR to its run without guessing.
+
 ### Manual pinned setup
 
 Select the actual target and an isolated worktree or clone. From Substrate, replace

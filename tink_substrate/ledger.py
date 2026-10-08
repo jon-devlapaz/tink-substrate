@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 import re
+import secrets
 import statistics
 import subprocess
 
@@ -18,6 +19,13 @@ PROCESS_PATH = re.compile(r'runs/')  # matched at the repository root only
 PR_FIELDS = ('number,title,state,createdAt,mergedAt,closedAt,isDraft,headRefName,baseRefName,'
              'mergeCommit,reviews,body')  # commits are fetched per PR: listing them exceeds GitHub's node budget
 MIN_CELL = 5
+CHANGE_ID = re.compile(r'c\d{6}[a-z2-7]{4}')
+BASE32 = 'abcdefghijklmnopqrstuvwxyz234567'
+
+
+def mint(now=None):
+    """A change ID minted at intake: `c` + yyMMdd + 4 base32 characters, e.g. c261007k3xq."""
+    return 'c' + (now or datetime.now()).strftime('%y%m%d') + ''.join(secrets.choice(BASE32) for _ in range(4))
 
 
 def run_gh(args):
@@ -74,6 +82,25 @@ def size(clone, merge, commits=()):
     return {'product_add': added, 'product_del': deleted, 'files': files, 'process_lines': process}
 
 
+def change_id(clone, merge, commits, body):
+    """The stamped change ID: a `Tink-Change:` line in the PR body, else the run record committed by the change."""
+    match = re.search(r'^Tink-Change: (' + CHANGE_ID.pattern + r')\s*$', body or '', re.M)
+    if match:
+        return match.group(1)
+    if not merge:
+        return None
+    paths = (git_out(clone, 'diff', '--name-only', '-z', base(clone, merge, commits), merge, '--', 'runs/') or '')
+    for path in paths.split('\0'):
+        if re.fullmatch(r'runs/[^/]+/tools\.json', path):
+            try:
+                value = json.loads(git_out(clone, 'show', f'{merge}:{path}') or '{}').get('change')
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, str) and CHANGE_ID.fullmatch(value):
+                return value
+    return None
+
+
 def review(pr, comments):
     """A round is a reviewed commit that a later commit replaced. Each review names the commit it saw, so this does
     not depend on when commits were made or pushed."""
@@ -99,6 +126,7 @@ def observe(repo, clone, prs, comments_for):
         created, merged = when(pr['createdAt']), when(pr.get('mergedAt'))
         state = 'merged' if merged else 'closed' if pr['state'] == 'CLOSED' else 'open'
         fields = {
+            'change_id': change_id(clone, merge, pr['commits'], pr.get('body')) if merged else None,
             'vcs': {'vcs.repository.name': repo, 'vcs.change.id': str(pr['number']),
                     'vcs.ref.head.name': pr['headRefName'], 'vcs.ref.head.revision': merge},
             'outcome': {'state': state, 'reverted_by': reverts.get(pr['number'])},

@@ -234,6 +234,12 @@ if not a.check:
             self.assertEqual(workflow(self.checkout, 'trial', ['verify', 'trial']), 0)
         self.assertTrue(marker.is_file())
 
+    def test_new_run_carries_a_change_id_into_its_committed_record(self):
+        record = self.prepare()
+        self.assertRegex(record['change'], r'^c\d{6}[a-z2-7]{4}$')
+        committed = json.loads((self.checkout / 'runs/trial/tools.json').read_text())
+        self.assertEqual(committed['change'], record['change'])
+
     def test_second_run_cannot_replace_first_runs_workflow(self):
         self.prepare('first')
         commit(self.checkout)
@@ -256,6 +262,8 @@ if not a.check:
         self.assertIn(record['package'], output.getvalue())
         self.assertIn('tools.json', output.getvalue())
         self.assertIn('bundled-only', output.getvalue())
+        self.assertIn(f"change: {record['change']}", output.getvalue())
+        self.assertIn(f"Tink-Change: {record['change']}", output.getvalue())
         with self.assertRaisesRegex(ValueError, 'prepared checkout'):
             workflow(self.checkout, 'trial', ['stage', 'trial', '3', '--worktree', str(self.root / 'child')])
 
