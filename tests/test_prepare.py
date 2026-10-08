@@ -240,6 +240,12 @@ if not a.check:
         committed = json.loads((self.checkout / 'runs/trial/tools.json').read_text())
         self.assertEqual(committed['change'], record['change'])
 
+    def test_resume_with_a_different_change_id_is_refused(self):
+        record = self.prepare()
+        other = 'c240101zzzz'
+        with self.assertRaisesRegex(ValueError, f'prepared for change {record["change"]}; it cannot be re-prepared as {other}'):
+            prepare_run(self.checkout, 'trial', self.root / 'packages', change=other)
+
     def test_second_run_cannot_replace_first_runs_workflow(self):
         self.prepare('first')
         commit(self.checkout)

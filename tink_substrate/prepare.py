@@ -237,6 +237,9 @@ def prepare_run(checkout, run, packages=DEFAULT_PACKAGES, profile='light', kind=
             raise ValueError('Run paths must not be symlinks')
         record = load_record(checkout, run)
         if record:
+            saved_change = record.get('change')
+            if change is not None and saved_change != change:
+                raise ValueError(f'This run was prepared for change {saved_change}; it cannot be re-prepared as {change}')
             return record
         if path.exists():
             raise ValueError('This run was not prepared in this checkout; resume it where it was prepared, '
