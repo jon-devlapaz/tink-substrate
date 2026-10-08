@@ -5,6 +5,9 @@ spends attention twice: once to approve the sequence with its finished briefs, a
 
 ## 1. Draft every brief, then ask once
 
+Sequences use tink-sdlc's light profile, where each slice has one brief. A slice that needs the full profile (separate
+intent, spec and plan gates) runs on its own, outside the sequence.
+
 Agree the slices with the user. Then, for each slice, prepare its run in its own isolated checkout (with its change ID)
 and write its brief under the installed SDLC, as for any change. Present all the finished briefs together. The user
 approves the sequence by accepting those briefs and saying what they authorize.
@@ -42,7 +45,9 @@ reviews). If the forge refuses the merge, that is a stop.
 5. **Merge rule:** merge when every required check passes, the SDLC verification is current for the PR head, and no P0
    or P1 finding is open. Write P2 findings into the slice's handoff for the end report. If the repository already
    keeps a running issue for review follow-ups, add them there too. P2s never start another review round.
-6. After the merge, write the closure record and save the closure archive. Inside a sequence, the delivery and merge
+6. After the merge, write the closure record and save the closure archive. Then check the outcome against the
+   remaining slices: if it shows a later slice is unnecessary, should be merged with another, or needs a different
+   scope, record that in the sequence record and stop. Inside a sequence, the delivery and merge
    reports go into the records and the end report instead of separate messages.
 
 ## 4. Stop and report instead of continuing
@@ -54,7 +59,7 @@ Stop the sequence, leave the current PR open, and send the end report when any o
 - a slice needs more than its approved brief (scope change);
 - anything touching production, credentials, user data, payments, or something that can't be undone;
 - a decision the approval doesn't name, or the forge refuses the merge;
-- a finding that changes what the later slices should be.
+- a finding or an outcome that changes what the later slices should be.
 
 Stopping early is a normal outcome, not a failure. Don't ask "should I continue?" for anything else. Continue.
 
