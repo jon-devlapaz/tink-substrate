@@ -12,6 +12,7 @@ their parent's links. Token names follow OpenTelemetry GenAI (input includes cac
 """
 
 import bisect
+import gzip
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
@@ -25,6 +26,7 @@ CAPS = (2, 5, 10)
 HOME = Path.home()
 DEFAULT_DIRS = {'claude': HOME / '.claude/projects', 'codex': HOME / '.codex/sessions', 'pi': HOME / '.pi/agent/sessions'}
 DEFAULT_SNAPSHOTS = HOME / '.local/share/tink-substrate/ledger/transcripts'
+DEFAULT_MIRROR = HOME / '.local/share/tink-substrate/ledger/mirror'
 GLOBS = {'claude': ('*/*.jsonl', '*/*/subagents/*.jsonl'), 'codex': ('*/*/*/*.jsonl',), 'pi': ('*/*.jsonl',)}
 PR_URL = re.compile(r'github\.com/([\w.-]+/[\w.-]+)/pull/(\d+)')
 STAMP = re.compile(r'(?:^|\n)(?:Tink-Change|change): (' + CHANGE_ID.pattern + r')\b')
@@ -254,8 +256,9 @@ def child_name(path):
     return f'{path.parent.parent.name}/subagents/{path.stem}' if path.parent.name == 'subagents' else path.stem
 
 
-def transcripts(dirs, snapshots):
-    """(harness, name, lines) for each transcript. Live folders first; snapshots fill in what has been deleted."""
+def transcripts(dirs, snapshots, mirror=None):
+    """(harness, name, lines) for each transcript. Live folders first; the mirror kept by `ledger update`, then
+    snapshot archives, fill in what the harnesses have deleted."""
     seen = set()
     for harness, directory in dirs.items():
         paths = sorted(p for pattern in GLOBS[harness] for p in Path(directory).glob(pattern)) if directory else ()
@@ -264,6 +267,14 @@ def transcripts(dirs, snapshots):
                 continue
             seen.add((harness, path.name))
             yield harness, child_name(path), path.read_text(errors='replace').splitlines()
+    for harness in dirs:
+        root = Path(mirror) / harness if mirror else None
+        for path in sorted(root.rglob('*.jsonl.gz')) if root and root.is_dir() else ():
+            original = path.with_suffix('')  # s.jsonl.gz -> s.jsonl
+            if not transcript(original) or (harness, original.name) in seen:
+                continue
+            seen.add((harness, original.name))
+            yield harness, child_name(original), gzip.decompress(path.read_bytes()).decode(errors='replace').splitlines()
     for archive in sorted(Path(snapshots).glob('*.tgz'), reverse=True) if snapshots else ():  # newest copy wins
         harness = {'claude-projects': 'claude', 'codex-sessions': 'codex', 'pi-sessions': 'pi'}.get(
             archive.name.rsplit('-', 2)[0])
@@ -412,7 +423,7 @@ def configs(everyone, rows):
 
 
 def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'], pi=DEFAULT_DIRS['pi'],
-          snapshots=DEFAULT_SNAPSHOTS):
+          snapshots=DEFAULT_SNAPSHOTS, mirror=DEFAULT_MIRROR):
     ledger_path = Path(ledger_path)
     existing = read(ledger_path)
     rows = {change: row for change, row in fold(existing).items() if 'outcome' in row}
@@ -420,7 +431,7 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
     by_id = {row['change_id']: change for change, row in rows.items()  # an ID two changes share links neither
              if row.get('change_id') and stamps.count(row['change_id']) == 1}
     everyone, skipped, copied = [], 0, set()
-    for harness, name, lines in transcripts({'claude': claude, 'codex': codex, 'pi': pi}, snapshots):
+    for harness, name, lines in transcripts({'claude': claude, 'codex': codex, 'pi': pi}, snapshots, mirror):
         try:
             lines = [line for line in lines if line.strip()]
             entries = [json.loads(line) for line in lines[:-1]]

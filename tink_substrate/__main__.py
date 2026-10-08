@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 from . import __version__
 from .archive import archive_run
-from . import ledger, sessions
+from . import ledger, ledger_auto, sessions
 from .prepare import prepare_run, workflow, DEFAULT_PACKAGES
 from .server import make_server
 from .sources import SourceError, read_record, snapshot, git
@@ -60,11 +60,23 @@ def main(argv=None):
     sweep.add_argument('--no-comments', action='store_true', help='skip fetching review comments (no P1 counts)')
     minutes = book_commands.add_parser('sessions', help='add operator minutes and touches from harness transcripts')
     minutes.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
+    refresh = book_commands.add_parser('update', help='mirror transcripts, sweep GitHub for changes, re-read sessions')
+    refresh.add_argument('--ledger-config', type=Path, default=ledger_auto.DEFAULT_CONFIG)
+    daily = book_commands.add_parser('schedule', help='run `ledger update` daily (macOS LaunchAgent)')
+    daily.add_argument('--package', type=Path, help='installed skill directory (default: this package)')
+    daily.add_argument('--hour', type=int, default=6)
     show = book_commands.add_parser('report', help='print throughput and quality views')
     show.add_argument('--ledger', type=Path, default=ledger.DEFAULT_LEDGER)
     args = parser.parse_args(argv)
     try:
         if args.command == 'ledger':
+            if args.ledger_command == 'update':
+                result = ledger_auto.update(args.ledger_config)
+                print(json.dumps(result))
+                return 0 if result['ok'] else 1
+            if args.ledger_command == 'schedule':
+                print(json.dumps({'scheduled': str(ledger_auto.schedule(package=args.package, hour=args.hour))}))
+                return 0
             if args.ledger_command == 'sessions':
                 print(json.dumps(sessions.sweep(args.ledger)))
             elif args.ledger_command == 'sweep':

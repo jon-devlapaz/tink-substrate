@@ -112,6 +112,19 @@ See [Finish a change](docs/finish-a-change.md) for details and manual commands.
 lines apart from run records, review rounds, P1 findings and reverts. It only reads the repositories, and running it
 again adds nothing new. `ledger report` prints weekly throughput and quality; cells with fewer than 5 changes show —.
 
+To keep it current without remembering, list your repositories once in `~/.config/tink-substrate/ledger.json`
+(`{"repos": {"owner/name": "/path/to/clone"}}`) and schedule the daily update from the installed package:
+
+```bash
+python3 -m tink_substrate ledger update
+python3 -m tink_substrate ledger schedule
+```
+
+`ledger update` keeps a private compressed copy of every harness transcript (harnesses delete old ones), fetches
+only pull requests changed since its last run, re-reads sessions, and exits non-zero if any step failed. `ledger
+schedule` installs a macOS LaunchAgent that runs it daily and logs to the ledger folder. The commands below run each
+step by hand:
+
 ```bash
 python3 -m tink_substrate ledger sweep --repo owner/name=~/path/to/clone
 python3 -m tink_substrate ledger sessions

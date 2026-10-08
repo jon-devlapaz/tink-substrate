@@ -13,7 +13,7 @@ Ways this could fail, written before the code:
 """
 import contextlib
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import re
 from pathlib import Path
@@ -95,6 +95,7 @@ class LedgerTest(unittest.TestCase):
             if args[:2] == ['pr', 'list']:
                 return json.dumps([{k: v for k, v in pr.items() if k != 'commits'} for pr in self.prs])
             if args[:2] == ['pr', 'view']:
+                self.viewed.append(int(args[2]))
                 return json.dumps({'commits': self.prs[int(args[2]) - 1]['commits']})
             if args[0] == 'api':
                 self.assertIn('--slurp', args)
@@ -102,6 +103,7 @@ class LedgerTest(unittest.TestCase):
                 return json.dumps(self.comments[number])
             raise AssertionError(args)
 
+        self.viewed = []
         patcher = patch.object(ledger, 'run_gh', fake_gh)
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -161,6 +163,32 @@ class LedgerTest(unittest.TestCase):
         self.assertTrue(all(re.fullmatch(r'c\d{6}[a-z2-7]{4}', i) for i in ids))
         self.assertGreater(len(set(ids)), 40)  # random suffixes; a rare collision must not fail CI
         self.assertTrue(ledger.mint(datetime(2026, 10, 7)).startswith('c261007'))
+
+    def test_incremental_sweep_fetches_only_updated_prs_and_still_sees_new_reverts(self):
+        for pr in self.prs:
+            pr['updatedAt'] = pr['closedAt']
+        reverter = self.prs.pop(1)  # #2 reverts #1; hold it back for the second sweep
+        self.prs.insert(1, {**reverter, 'title': 'Unrelated', 'body': '', 'mergedAt': None, 'state': 'OPEN',
+                            'closedAt': None, 'updatedAt': '2026-10-06T10:00:00Z'})
+        ledger.sweep(self.ledger, [('o/r', self.repo)])
+        self.assertIsNone(self.rows()['o/r#1']['outcome']['reverted_by'])
+        self.prs[1] = {**reverter, 'updatedAt': '2026-10-09T10:00:00Z'}
+        self.viewed.clear()
+        since = {'o/r': datetime(2026, 10, 8, tzinfo=timezone.utc)}
+        ledger.sweep(self.ledger, [('o/r', self.repo)], since=since)
+        self.assertEqual(self.viewed, [2])  # only the PR updated since the last sweep is fetched in full
+        rows = self.rows()
+        self.assertEqual(rows['o/r#1']['outcome']['reverted_by'], 'o/r#2')
+        self.assertEqual(rows['o/r#1']['size']['product_add'], 10)  # carried over, not lost
+
+    def test_incremental_sweep_retries_a_size_the_clone_did_not_have(self):
+        for pr in self.prs:
+            pr['updatedAt'] = pr['closedAt']
+        ledger.sweep(self.ledger, [('o/r', self.repo)])
+        self.assertIsNone(self.rows()['o/r#2']['size'])
+        self.viewed.clear()
+        ledger.sweep(self.ledger, [('o/r', self.repo)], since={'o/r': datetime(2026, 10, 9, tzinfo=timezone.utc)})
+        self.assertEqual(self.viewed, [2])  # still unmeasured, so asked again; measured PRs are not
 
     def test_missing_merge_commit_records_unknown_size(self):
         self.sweep()
