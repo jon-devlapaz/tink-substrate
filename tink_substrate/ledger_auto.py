@@ -133,7 +133,7 @@ def schedule(agents=HOME / 'Library/LaunchAgents', package=None, python=None, ho
         raise ValueError(f'{package} does not contain the tink_substrate package; pass the installed skill directory')
     agents = Path(agents)
     agents.mkdir(parents=True, exist_ok=True)
-    log = Path(home) / 'update.log'
+    log = private_dir(Path(home)) / 'update.log'  # launchd cannot create the log's folder itself
     plist = {
         'Label': LABEL,
         'ProgramArguments': [python or os.path.realpath(sys.executable), '-B', '-m', 'tink_substrate', 'ledger', 'update'],

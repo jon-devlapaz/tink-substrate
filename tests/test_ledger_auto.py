@@ -88,7 +88,7 @@ class LedgerAutoTest(unittest.TestCase):
         package = self.root / 'skills' / 'tink-substrate'
         (package / 'tink_substrate').mkdir(parents=True)
         commands = []
-        path = ledger_auto.schedule(agents, package, python='/usr/bin/python3', hour=6,
+        path = ledger_auto.schedule(agents, package, python='/usr/bin/python3', hour=6, home=self.home,
                                     run=lambda argv: commands.append(argv))
         plist = plistlib.loads(path.read_bytes())
         self.assertEqual(plist['ProgramArguments'], ['/usr/bin/python3', '-B', '-m', 'tink_substrate', 'ledger', 'update'])
@@ -108,7 +108,8 @@ class LedgerAutoTest(unittest.TestCase):
 
     def test_schedule_refuses_a_directory_without_the_package(self):
         with self.assertRaisesRegex(ValueError, 'tink_substrate'):
-            ledger_auto.schedule(self.root / 'LaunchAgents', self.root, python='/usr/bin/python3', run=lambda a: None)
+            ledger_auto.schedule(self.root / 'LaunchAgents', self.root, python='/usr/bin/python3', home=self.home,
+                                 run=lambda a: None)
 
 
 if __name__ == '__main__':
