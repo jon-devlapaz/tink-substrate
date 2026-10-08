@@ -16,7 +16,7 @@ from . import __version__
 
 DEFAULT_LEDGER = Path.home() / '.local/share/tink-substrate/ledger/changes.jsonl'
 PROCESS_PATH = re.compile(r'runs/')  # matched at the repository root only
-PR_FIELDS = ('number,title,state,createdAt,mergedAt,closedAt,isDraft,headRefName,baseRefName,'
+PR_FIELDS = ('number,title,state,createdAt,updatedAt,mergedAt,closedAt,isDraft,headRefName,baseRefName,'
              'mergeCommit,reviews,body')  # commits are fetched per PR: listing them exceeds GitHub's node budget
 MIN_CELL = 5
 CHANGE_ID = re.compile(r'c\d{6}[a-z2-7]{4}')
@@ -109,7 +109,10 @@ def review(pr, comments):
     return {'rounds': len(reviewed), 'p1': sum('P1 Badge' in c.get('body', '') for c in comments)}
 
 
-def observe(repo, clone, prs, comments_for):
+def observe(repo, clone, prs, comments_for, commits_for, earlier=None, since=None):
+    """One line per PR. With `since`, a PR not updated since then and already in the ledger keeps its earlier fields;
+    only its revert is recomputed, because a new revert PR changes an old row."""
+    earlier = earlier or {}
     reverts = {}
     merged_prs = [pr for pr in prs if pr.get('mergedAt')]
     for pr in merged_prs:
@@ -122,6 +125,14 @@ def observe(repo, clone, prs, comments_for):
             reverts.setdefault(titles[match.group(1)], f'{repo}#{pr["number"]}')
     for pr in sorted(prs, key=lambda p: p['number']):
         change = f'{repo}#{pr["number"]}'
+        key = [change, 'backfill', 'gh', pr['number']]
+        known = earlier.get(json.dumps(key))
+        if known and since and pr.get('updatedAt') and when(pr['updatedAt']) < since:
+            fields = {**known, 'outcome': {**known['outcome'], 'reverted_by': reverts.get(pr['number'])}}
+            yield {'schema': 1, 'key': key, 'change': change, 'phase': 'backfill',
+                   'at': pr.get('closedAt') or pr['createdAt'], 'by': f'sweep@{__version__}', 'fields': fields}
+            continue
+        pr['commits'] = commits_for(pr['number'])
         merge = (pr.get('mergeCommit') or {}).get('oid')
         created, merged = when(pr['createdAt']), when(pr.get('mergedAt'))
         state = 'merged' if merged else 'closed' if pr['state'] == 'CLOSED' else 'open'
@@ -135,7 +146,7 @@ def observe(repo, clone, prs, comments_for):
             'size': size(clone, merge, pr['commits']) if merged else None,
             'review': review(pr, comments_for(pr['number'])),
         }
-        yield {'schema': 1, 'key': [change, 'backfill', 'gh', pr['number']], 'change': change,
+        yield {'schema': 1, 'key': key, 'change': change,
                'phase': 'backfill', 'at': pr.get('closedAt') or pr['createdAt'], 'by': f'sweep@{__version__}',
                'fields': fields}
 
@@ -155,8 +166,10 @@ def fold(lines):
     return rows
 
 
-def sweep(ledger_path, repos, comments=True):
+def sweep(ledger_path, repos, comments=True, since=None):
+    """since: {repo: datetime}. PRs untouched since then are not fetched again (see observe)."""
     ledger_path = Path(ledger_path)
+    since = since or {}
     existing = read(ledger_path)
     latest = {json.dumps(line['key']): line['fields'] for line in existing}
     added = 0
@@ -165,16 +178,16 @@ def sweep(ledger_path, repos, comments=True):
         for repo, clone in repos:
             prs = json.loads(run_gh(['pr', 'list', '-R', repo, '--state', 'all', '--limit', '1000',
                                      '--json', PR_FIELDS]))
-            for pr in prs:
-                pr['commits'] = json.loads(run_gh(['pr', 'view', str(pr['number']), '-R', repo,
-                                                   '--json', 'commits']))['commits']
+
+            def commits_for(number):
+                return json.loads(run_gh(['pr', 'view', str(number), '-R', repo, '--json', 'commits']))['commits']
 
             def comments_for(number):
                 if not comments:
                     return []
                 pages = json.loads(run_gh(['api', f'repos/{repo}/pulls/{number}/comments', '--paginate', '--slurp']))
                 return [comment for page in pages for comment in page]
-            for line in observe(repo, clone, prs, comments_for):
+            for line in observe(repo, clone, prs, comments_for, commits_for, latest, since.get(repo)):
                 if latest.get(json.dumps(line['key'])) == line['fields']:
                     continue
                 out.write(json.dumps(line, sort_keys=True) + '\n')
