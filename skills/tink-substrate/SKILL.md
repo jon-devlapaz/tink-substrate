@@ -75,9 +75,9 @@ skip a required check or invent success.
 
 ## Run an approved sequence
 
-When the user approves several slices at once, record the standing approval and run them back to back as
-`docs/run-a-sequence.md` describes: merge under the P1 rule, stop only for the listed reasons, and finish with one end
-report. Don't ask whether to continue between slices.
+When the user wants several slices done in a row, follow `docs/run-a-sequence.md`: draft every brief first, get one
+approval that names what it covers, keep a sequence record, merge each PR under the P1 rule, stop only for the listed
+reasons, and finish with one end report. Don't ask whether to continue between slices.
 
 ## Deliver and learn
 
