@@ -235,10 +235,54 @@ class SessionsTest(unittest.TestCase):
     def test_touch_phases(self):
         write(self.claude / 'p' / 's.jsonl', [
             claude_human(0), claude_usage(1, 'a', 'Which file should I change?'), claude_human(3),
-            claude_usage(4, 'b'), claude_human(6), claude_usage(7, 'c'), claude_human(400)])
+            claude_usage(4, 'b'), claude_human(6), claude_usage(7, 'c'), claude_human(340)])  # merged at 300
         self.run_sweep()
         self.assertEqual(self.rows()['o/r#1']['operator']['phases'],
                          {'intake': 1, 'agent_asked': 1, 'steered': 1, 'post_merge': 1})
+    def test_branch_shared_by_two_repositories_is_ambiguous(self):
+        with self.ledger.open('a') as out:
+            out.write(json.dumps({'schema': 1, 'key': ['p/q#9', 'backfill', 'gh', 9], 'change': 'p/q#9',
+                                  'phase': 'backfill', 'at': at(300), 'by': 't', 'fields': {
+                                      'change_id': None, 'outcome': {'state': 'merged', 'reverted_by': None},
+                                      'vcs': {'vcs.repository.name': 'p/q', 'vcs.ref.head.name': 'tink/feature'},
+                                      'times': {'created': at(-60), 'merged': at(300), 'closed': at(300)},
+                                      'review': {'rounds': 0, 'p1': 0}}}) + '\n')
+        write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4)])
+        self.run_sweep()
+        rows = self.rows()
+        self.assertNotIn('operator', rows['o/r#1'])
+        self.assertEqual(rows['~unattributed/2026-W41']['unattributed']['minutes']['c5'], 3.0)
+
+    def test_stamped_link_is_not_diluted_by_weaker_evidence(self):
+        write(self.claude / 'p' / 's.jsonl', [claude_human(0, 'change: c261007abcd'), claude_agent(1),
+                                               claude_human(4, 'see https://github.com/o/r/pull/3')])
+        self.run_sweep()
+        rows = self.rows()
+        self.assertEqual(rows['o/r#2']['operator']['minutes']['c5'], 3.0)
+        self.assertNotIn('operator', rows['o/r#1'])
+        self.assertNotIn('operator', rows['o/r#3'])
+
+    def test_branch_switch_mid_session_charges_each_branch(self):
+        write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4),
+                                               {**claude_agent(5), 'gitBranch': 'other'},
+                                               claude_human(8, branch='other')])
+        self.run_sweep()
+        rows = self.rows()
+        self.assertEqual(rows['o/r#1']['operator']['minutes']['c5'], 3.0)
+        self.assertEqual(rows['o/r#2']['operator']['minutes']['c5'], 3.0)
+
+    def test_minutes_count_in_the_week_they_were_spent(self):
+        earlier = lambda minute: (T0 - timedelta(days=7) + timedelta(minutes=minute)).isoformat()
+        write(self.pi / '--w--' / 'old.jsonl', [
+            {'type': 'session', 'id': 'old', 'cwd': '/w', 'timestamp': earlier(0)},
+            {'type': 'message', 'timestamp': earlier(0), 'message': {'role': 'user', 'content': [
+                {'type': 'text', 'text': 'https://github.com/o/r/pull/3'}]}},
+            {'type': 'message', 'timestamp': earlier(1), 'message': {'role': 'assistant', 'content': []}},
+            {'type': 'message', 'timestamp': earlier(4), 'message': {'role': 'user', 'content': []}}])
+        self.run_sweep()
+        operator = self.rows()['o/r#3']['operator']
+        self.assertEqual(operator['minutes_by_week'], {'2026-W40': {'c2': 2.0, 'c5': 3.0, 'c10': 3.0}})
+        self.assertIn('2026-W40', ledger.report(self.rows()))
 
     def test_no_prompt_text_and_rerun_is_idempotent(self):
         write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4)])

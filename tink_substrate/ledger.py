@@ -187,30 +187,35 @@ def cell(values, show):
 
 
 def operator_view(rows, unattributed):
-    """The one number: useful merged changes per operator hour, at caps C = 2, 5 and 10 minutes."""
-    weeks = {}
+    """The one number: useful merged changes per operator hour, at caps C = 2, 5 and 10 minutes. Changes count in the
+    week they merged; operator hours count in the week they were spent."""
+    weeks, hours = {}, {}
     for row in rows.values():
         stamp = row['times'].get('merged') or row['times'].get('closed')
         if stamp:
             year, number, _ = when(stamp).isocalendar()
             weeks.setdefault(f'{year}-W{number:02d}', []).append(row)
+    spent = [(row['operator'].get('minutes_by_week') or {}) for row in rows.values() if row.get('operator')]
+    spent += [{name: value['minutes']} for name, value in unattributed.items()]
+    for by_week in spent:
+        for name, minutes in by_week.items():
+            for cap, value in minutes.items():
+                hours.setdefault(name, {}).setdefault(cap, 0)
+                hours[name][cap] += value / 60
     lines = ['View 1b: operator attention (minutes from transcripts; C = gap cap)']
-    for name in sorted(set(weeks) | set(unattributed)):
-        group = weeks.get(name, [])
-        merged = [r for r in group if r['outcome']['state'] == 'merged']
+    for name in sorted(set(weeks) | set(hours)):
+        merged = [r for r in weeks.get(name, []) if r['outcome']['state'] == 'merged']
         useful = [r for r in merged if not r['outcome']['reverted_by']]
         covered = [r for r in merged if r.get('operator')]
-        if not covered and name not in unattributed:
+        total = hours.get(name, {})
+        if not total:
             continue
-        loose = unattributed.get(name, {}).get('minutes', {})
-        hours = {cap: (sum(r['operator']['minutes'][cap] for r in group if r.get('operator')) + loose.get(cap, 0)) / 60
-                 for cap in ('c2', 'c5', 'c10')}
-        per_hour = ' '.join(f'{cap}:{len(useful) / hours[cap]:.1f}' if hours[cap] and len(covered) >= MIN_CELL
-                            else f'{cap}:—' for cap in hours)
+        loose = unattributed.get(name, {}).get('minutes', {}).get('c5', 0) / 60
+        per_hour = ' '.join(f'{cap}:{len(useful) / total[cap]:.1f}' if total.get(cap) and len(covered) >= MIN_CELL
+                            else f'{cap}:—' for cap in ('c2', 'c5', 'c10'))
         median = cell([r['operator']['minutes']['c5'] for r in covered], lambda v: f'{statistics.median(v):.0f}')
-        lines.append(f'  {name}  with operator data {len(covered)}/{len(merged)}  operator h {hours["c5"]:.1f}'
-                     f'  unattributed h {loose.get("c5", 0) / 60:.1f}  median min/change {median}'
-                     f'  useful/h {per_hour}')
+        lines.append(f'  {name}  with operator data {len(covered)}/{len(merged)}  operator h {total.get("c5", 0):.1f}'
+                     f'  unattributed h {loose:.1f}  median min/change {median}  useful/h {per_hour}')
     return lines
 
 

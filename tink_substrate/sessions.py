@@ -36,19 +36,26 @@ OTEL = {'input': 'gen_ai.usage.input_tokens', 'output': 'gen_ai.usage.output_tok
 
 
 def session(harness, sid):
-    return {'harness': harness, 'id': sid, 'humans': [], 'activity': [], 'branch': None, 'repo': None,
+    return {'harness': harness, 'id': sid, 'humans': [], 'activity': [], 'branches': [], 'repo': None,
             'prs': set(), 'pr_links': set(), 'stamps': set(), 'launched': False, 'parent': None,
             'usage': [], 'dollars': None, 'version': None, 'models': set(), 'asked': set()}
 
 
-def usage(found, instant, model, effort, tokens, dollars=None):
+def usage(found, moment, model, effort, tokens, dollars=None):
     """One model response: tokens normalized to TOKENS, dollars only if the harness reported them."""
-    found['usage'].append((instant, tokens, dollars))
+    found['usage'].append((moment, tokens, dollars))
     found['models'].add(f'{model}@{effort}' if effort else model)
 
 
 def asks(text):
     return text.rstrip().endswith('?')
+
+
+def instant(value):
+    """An event time; a supported event without one makes the transcript unreadable, so it is skipped."""
+    if not value:
+        raise ValueError('event without a timestamp')
+    return when(value)
 
 
 def evidence(found, text):
@@ -69,23 +76,23 @@ def read_claude(entries, sid):
         kind, stamp = entry['type'], entry.get('timestamp')
         if kind == 'pr-link':
             found['pr_links'].add(f"{entry['prRepository']}#{entry['prNumber']}")
-        if entry.get('gitBranch'):
-            found['branch'] = entry['gitBranch']
+        if entry.get('gitBranch') and stamp:  # a session can switch branches; keep each switch
+            found['branches'].append((when(stamp), entry['gitBranch']))
         if kind == 'cost-state':
             found['dollars'] = entry.get('totalCostUSD')
         if kind == 'assistant':
-            message, instant = entry['message'], when(stamp)
-            found['activity'].append(instant)
+            message, moment = entry['message'], instant(stamp)
+            found['activity'].append(moment)
             found['version'] = entry.get('version') or found['version']
             text = text_of(message['content'])
             evidence(found, text)
             if asks(text) or any(isinstance(b, dict) and b.get('name') == 'AskUserQuestion' for b in message['content']):
-                found['asked'].add(instant)
+                found['asked'].add(moment)
             spent = message.get('usage')
             if spent and message.get('id') not in messages:  # streamed lines repeat one message's usage
                 messages.add(message.get('id'))
                 cache_read, cache_write = spent.get('cache_read_input_tokens', 0), spent.get('cache_creation_input_tokens', 0)
-                usage(found, instant, message.get('model'), None, {
+                usage(found, moment, message.get('model'), None, {
                     'input': spent.get('input_tokens', 0) + cache_read + cache_write, 'output': spent.get('output_tokens', 0),
                     'cache_read': cache_read, 'cache_write': cache_write,
                     'reasoning': (spent.get('output_tokens_details') or {}).get('thinking_tokens', 0)})
@@ -96,7 +103,7 @@ def read_claude(entries, sid):
                 isinstance(b, dict) and b.get('type') == 'tool_result' for b in content))
                 and (origin.get('kind') == 'human' if isinstance(origin, dict) else entry.get('promptSource') != 'system'))
             if human:
-                found['humans'].append(when(stamp))
+                found['humans'].append(instant(stamp))
                 evidence(found, text_of(content))
     return found
 
@@ -122,16 +129,17 @@ def read_codex(entries, sid):
             if isinstance(source, dict):
                 found['parent'] = ((source.get('subagent') or {}).get('thread_spawn') or {}).get('parent_thread_id')
             git = payload.get('git') or {}
-            found['branch'] = git.get('branch')
+            if git.get('branch'):
+                found['branches'].append((instant(entry['timestamp']), git['branch']))
             match = re.search(r'github\.com[/:]([\w.-]+/[\w.-]+?)(?:\.git)?$', git.get('repository_url') or '')
             found['repo'] = match.group(1) if match else None
         elif entry['type'] == 'event_msg' and payload.get('type') == 'item_completed':
             item = payload['item']
             if item['type'] == 'UserMessage':
-                found['humans'].append(when(entry['timestamp']))
+                found['humans'].append(instant(entry['timestamp']))
                 evidence(found, text_of(item.get('content') or []))
             else:
-                found['activity'].append(when(entry['timestamp']))
+                found['activity'].append(instant(entry['timestamp']))
                 if item['type'] == 'AgentMessage':
                     text = text_of(item.get('content') or [])
                     evidence(found, text)
@@ -153,11 +161,11 @@ def read_pi(entries, sid):
             continue
         role = entry['message']['role']
         if role == 'user':
-            found['humans'].append(when(entry['timestamp']))
+            found['humans'].append(instant(entry['timestamp']))
             evidence(found, text_of(entry['message']['content']))
         elif role in ('assistant', 'toolResult'):
-            instant = when(entry['timestamp'])
-            found['activity'].append(instant)
+            moment = instant(entry['timestamp'])
+            found['activity'].append(moment)
             if role == 'assistant':
                 message = entry['message']
                 text = text_of(message['content'])
@@ -194,7 +202,7 @@ def transcripts(dirs, snapshots):
                 continue
             seen.add((harness, path.name))
             yield harness, path.stem, path.read_text(errors='replace').splitlines()
-    for archive in sorted(Path(snapshots).glob('*.tgz')) if snapshots else ():
+    for archive in sorted(Path(snapshots).glob('*.tgz'), reverse=True) if snapshots else ():  # newest copy wins
         harness = {'claude-projects': 'claude', 'codex-sessions': 'codex', 'pi-sessions': 'pi'}.get(
             archive.name.rsplit('-', 2)[0])
         if not harness:
@@ -209,32 +217,41 @@ def transcripts(dirs, snapshots):
 
 
 def link(found, rows, by_id):
-    """Changes this session worked on, each with the strongest evidence: stamped, pr-link, branch, text."""
-    links = {}
-    for stamp in found['stamps']:
-        if stamp in by_id:
-            links.setdefault(by_id[stamp], 'stamped')
-    for change in found['pr_links']:
-        if change in rows:
-            links.setdefault(change, 'pr-link')
-    span = found['humans'] or found['activity']
-    if not span:
-        return links
-    start, end = min(span), max(span)
-    if found['branch'] not in TRUNK and found['branch'] is not None:
-        for change, row in rows.items():
-            vcs, times = row.get('vcs') or {}, row.get('times') or {}
-            if vcs.get('vcs.ref.head.name') != found['branch']:
-                continue
-            if found['repo'] and vcs.get('vcs.repository.name') != found['repo']:
-                continue
-            opened, closed = when(times.get('created')), when(times.get('closed'))
-            if opened and opened.timestamp() - 86400 <= end.timestamp() and (not closed or start <= closed):
-                links.setdefault(change, 'branch')
-    for change in found['prs']:
-        if change in rows:
-            links.setdefault(change, 'text')
-    return links
+    """Changes this session worked on, from the strongest tier of evidence that finds any: stamped change ID,
+    Claude pr-link, branch within the change's time, then a PR URL in the conversation. Weaker tiers are fallbacks,
+    never added on top."""
+    stamped = {by_id[stamp] for stamp in found['stamps'] if stamp in by_id}
+    if stamped:
+        return dict.fromkeys(stamped, 'stamped')
+    linked = {change for change in found['pr_links'] if change in rows}
+    if linked:
+        return dict.fromkeys(linked, 'pr-link')
+    branched = set()
+    for branch in {name for _, name in found['branches']} - TRUNK:
+        matches = [change for change, row in rows.items()
+                   if (row.get('vcs') or {}).get('vcs.ref.head.name') == branch
+                   and (not found['repo'] or row['vcs'].get('vcs.repository.name') == found['repo'])]
+        if len({rows[change]['vcs'].get('vcs.repository.name') for change in matches}) > 1:
+            continue  # the same branch name in several repositories: ambiguous without the session's repository
+        times = [t for t in found['humans'] + found['activity'] if branch_at(found, t) == branch]
+        if not times:
+            continue
+        first, last = min(times).timestamp(), max(times).timestamp()
+        branched.update(change for change in matches if window(rows[change])[0] <= last
+                        and first <= window(rows[change])[1])
+    if branched:
+        return dict.fromkeys(branched, 'branch')
+    return dict.fromkeys((change for change in found['prs'] if change in rows), 'text')
+
+
+def branch_at(found, moment):
+    """The branch the session was on at a moment: the latest switch at or before it, else the first one seen."""
+    current = found['branches'][0][1] if found['branches'] else None
+    for switched, name in sorted(found['branches']):
+        if switched > moment:
+            break
+        current = name
+    return current
 
 
 def window(row):
@@ -251,19 +268,23 @@ def credits(found, cap):
     for human in sorted(t.timestamp() for t in found['humans']):
         index = bisect.bisect_right(activity, human)
         if index:  # the session's first prompt has nothing visible before it, so it earns no credit
-            out.append((max(activity[index - 1], human - cap * 60), human))
+            start = max(activity[index - 1], human - cap * 60, out[-1][1] if out else float('-inf'))
+            if start < human:  # prompts sent back to back share one stretch of the session's time, never two
+                out.append((start, human))
     return out
 
 
 def merge_timeline(intervals):
-    """intervals: (start, end, {label: weight}). Each instant is split evenly between the intervals covering it."""
+    """intervals: (start, end, {label: weight}). Each instant is split evenly between the intervals covering it.
+    Seconds per (label, ISO week the time was spent in)."""
     points = sorted({p for start, end, _ in intervals for p in (start, end)})
     totals = {}
     for left, right in zip(points, points[1:]):
         covering = [labels for start, end, labels in intervals if start <= left and end >= right]
         for labels in covering:
             for label, weight in labels.items():
-                totals[label] = totals.get(label, 0) + (right - left) * weight / len(covering)
+                key = (label, week(left))
+                totals[key] = totals.get(key, 0) + (right - left) * weight / len(covering)
     return totals
 
 
@@ -285,10 +306,10 @@ def costs(everyone, rows):
     totals = {}
     for found in everyone:
         weights = [tokens['input'] + tokens['output'] for _, tokens, _ in found['usage']]
-        for (instant, tokens, dollars), weight in zip(found['usage'], weights):
+        for (moment, tokens, dollars), weight in zip(found['usage'], weights):
             if found['harness'] == 'claude' and found['dollars'] is not None:
                 dollars = found['dollars'] * weight / (sum(weights) or 1)
-            for label, share in (assign(instant.timestamp(), found['links'], rows) or unattributed(instant.timestamp())).items():
+            for label, share in (assign(moment.timestamp(), found, rows) or unattributed(moment.timestamp())).items():
                 total = totals.setdefault(label, {'tokens': dict.fromkeys(TOKENS, 0), 'dollars': 0.0, 'known': 0, 'all': 0})
                 for name in TOKENS:
                     total['tokens'][name] += tokens[name] * share
@@ -341,17 +362,21 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
             found['links'] = {change: 'parent' for change in parent['links']}
     talked = [found for found in everyone if not found['launched'] and found['humans']]
 
-    minutes = {}
+    minutes = {cap: {} for cap in CAPS}
+    by_week = {}  # operator time is reported in the week it was spent, not the week the change merged
     for cap in CAPS:
-        intervals = [(start, end, assign(end, found['links'], rows) or unattributed(end))
+        intervals = [(start, end, assign(end, found, rows) or unattributed(end))
                      for found in talked for start, end in credits(found, cap)]
-        minutes[cap] = merge_timeline(intervals)
+        for (label, spent), seconds in merge_timeline(intervals).items():
+            minutes[cap][label] = minutes[cap].get(label, 0) + seconds
+            weekly = by_week.setdefault(label, {}).setdefault(spent, {})
+            weekly[f'c{cap}'] = round(weekly.get(f'c{cap}', 0) + seconds / 60, 2)
     touches, phases, members = {}, {}, {}
     for found in talked:
         first = min(found['humans'])
         for human in found['humans']:
             kind = phase(found, human, first)
-            for label, weight in (assign(human.timestamp(), found['links'], rows) or unattributed(human.timestamp())).items():
+            for label, weight in (assign(human.timestamp(), found, rows) or unattributed(human.timestamp())).items():
                 merged = when((rows.get(label, {}).get('times') or {}).get('merged'))
                 touch = 'post_merge' if merged and human > merged else kind
                 touches[label] = touches.get(label, 0) + weight
@@ -365,8 +390,8 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
 
     operator = {}
     for label in set(touches) | set(minutes[CAPS[0]]):
-        numbers = {'minutes': {f'c{cap}': round(minutes[cap].get(label, 0) / 60, 1) for cap in CAPS},
-                   'touches': round(touches.get(label, 0), 2)}
+        numbers = {'minutes': {f'c{cap}': round(minutes[cap].get(label, 0) / 60, 2) for cap in CAPS},
+                   'minutes_by_week': by_week.get(label, {}), 'touches': round(touches.get(label, 0), 2)}
         operator[label] = {'unattributed': numbers} if label.startswith('~') else {'operator': {
             **numbers, 'phases': phases.get(label, {}), 'method': 'gap-cap',
             'sessions': sorted(members.get(label, []), key=lambda s: (s['harness'], s['id']))}}
@@ -394,15 +419,22 @@ def write_rows(ledger_path, existing, kind, produced):
     return added
 
 
-def assign(instant, links, rows):
-    """Weights per change for one moment of a session linked to several changes: those whose window holds it."""
+def assign(moment, found, rows):
+    """Weights per change for one moment of a session. Branch links take the change on the branch the session was on,
+    within that change's time; other links take the one change, or those whose window holds the moment."""
+    links = found['links']
     if not links:
         return None
+    if set(links.values()) == {'branch'}:
+        branch = branch_at(found, datetime.fromtimestamp(moment, timezone.utc))
+        inside = [change for change in links if rows[change]['vcs'].get('vcs.ref.head.name') == branch
+                  and window(rows[change])[0] <= moment <= window(rows[change])[1]]
+        return {change: 1 / len(inside) for change in inside} or None
     if len(links) == 1:
         return {next(iter(links)): 1.0}
-    inside = [change for change in links if window(rows[change])[0] <= instant <= window(rows[change])[1]]
+    inside = [change for change in links if window(rows[change])[0] <= moment <= window(rows[change])[1]]
     if not inside:
-        inside = [min(links, key=lambda c: min(abs(instant - edge) for edge in window(rows[c])))]
+        inside = [min(links, key=lambda c: min(abs(moment - edge) for edge in window(rows[c])))]
     return {change: 1 / len(inside) for change in inside}
 
 
