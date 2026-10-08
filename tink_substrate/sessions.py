@@ -139,6 +139,7 @@ def read_codex(entries, sid):
                                 {name: max(total[name] - previous[name], 0) for name in TOKENS}))
                 previous = total
         if entry['type'] == 'event_msg' and payload.get('type') == 'request_user_input':
+            found['activity'].append(instant(entry['timestamp']))
             found['asked'].add(instant(entry['timestamp']))
         if entry['type'] == 'turn_context':
             model, effort = payload.get('model'), payload.get('effort')
@@ -186,7 +187,7 @@ def read_pi(entries, sid, copied=None):
             copied.add(entry['id'])
         if entry['type'] == 'session':
             found['id'] = entry.get('id', sid)
-            found['version'] = str(entry.get('version'))
+            # the header's version is the session file format, not the Pi release, so the release stays unknown
         if entry['type'] == 'thinking_level_change':
             effort = entry.get('thinkingLevel')
         if entry['type'] != 'message':
@@ -216,13 +217,34 @@ def read_pi(entries, sid, copied=None):
     return found
 
 
+def read_pi_child(entries, sid):
+    """A Pi delegate's record (`<run>_<agent>_transcript.jsonl`): one line per event, usage on assistant lines."""
+    found = session('pi', sid)
+    found['launched'] = True
+    for entry in entries:
+        if entry.get('recordType') != 'message' or entry.get('role') != 'assistant':
+            continue
+        moment = instant(entry.get('timestamp'))
+        found['activity'].append(moment)
+        evidence(found, entry.get('text') or '')
+        spent = entry.get('usage')
+        if spent:
+            cache_read, cache_write = spent.get('cacheRead', 0), spent.get('cacheWrite', 0)
+            cost = spent.get('cost')
+            usage(found, moment, entry.get('model'), None, {
+                'input': spent.get('input', 0) + cache_read + cache_write, 'output': spent.get('output', 0),
+                'cache_read': cache_read, 'cache_write': cache_write, 'reasoning': spent.get('reasoning', 0)},
+                cost.get('total') if isinstance(cost, dict) else cost)
+    return found
+
+
 READERS = {'claude': read_claude, 'codex': read_codex, 'pi': read_pi}
 
 
 def transcript(name):
-    """False for macOS resource forks and Pi child-agent records (`*_transcript`, a different format whose cost is
-    not read yet). Claude subagents are kept: they cost money for their parent's change."""
-    return name.suffix == '.jsonl' and not name.name.startswith('._') and not name.stem.endswith('_transcript')
+    """False for macOS resource forks. Child agents (Claude subagents, Pi `*_transcript` delegates) are kept: they
+    cost money for their parent's change, though they never count as operator touches."""
+    return name.suffix == '.jsonl' and not name.name.startswith('._')
 
 
 def child_name(path):
@@ -404,7 +426,12 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
                 entries.append(json.loads(lines[-1])) if lines else None
             except ValueError:
                 pass  # a live transcript can end in a line still being written
-            found = read_pi(entries, name, copied) if harness == 'pi' else READERS[harness](entries, name)
+            if harness == 'pi' and name.endswith('_transcript'):
+                found = read_pi_child(entries, name)
+            elif harness == 'pi':
+                found = read_pi(entries, name, copied)
+            else:
+                found = READERS[harness](entries, name)
             if '/subagents/' in name:  # a Claude subagent: launched by its parent session
                 found['launched'], found['parent'] = True, name.split('/')[0]
         except (ValueError, KeyError, TypeError, AttributeError):

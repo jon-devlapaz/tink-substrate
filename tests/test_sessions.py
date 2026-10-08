@@ -266,6 +266,18 @@ class SessionsTest(unittest.TestCase):
         self.run_sweep()
         self.assertEqual(self.rows()['o/r#3']['cost']['llm.cost.total'], 3.0)
 
+    def test_pi_delegate_records_count_toward_cost_not_touches(self):
+        write(self.pi / '--w--' / 'run1_delegate_transcript.jsonl', [
+            {'recordType': 'message', 'role': 'user', 'timestamp': at(0), 'text': 'go'},
+            {'recordType': 'message', 'role': 'assistant', 'timestamp': at(1), 'model': 'gpt-6-luna',
+             'text': 'opened https://github.com/o/r/pull/3', 'usage': {'input': 20, 'output': 3, 'cost': 0.01}},
+            {'recordType': 'tool_start', 'timestamp': at(2)}])
+        self.run_sweep()
+        row = self.rows()['o/r#3']
+        self.assertEqual(row['cost']['llm.cost.total'], 0.01)
+        self.assertEqual(row['config']['models_seen']['launched'], ['gpt-6-luna'])
+        self.assertNotIn('operator', row)
+
     def test_codex_child_agent_cost_follows_its_parent(self):
         codex_session(self.codex, 'parent', 'tink/feature')
         codex_session(self.codex, 'child', 'main', source={'subagent': {'thread_spawn': {'parent_thread_id': 'parent'}}},
