@@ -38,13 +38,12 @@ OTEL = {'input': 'gen_ai.usage.input_tokens', 'output': 'gen_ai.usage.output_tok
 def session(harness, sid):
     return {'harness': harness, 'id': sid, 'humans': [], 'activity': [], 'branches': [], 'repo': None,
             'prs': set(), 'pr_links': set(), 'stamps': set(), 'launched': False, 'parent': None,
-            'usage': [], 'dollars': None, 'version': None, 'models': set(), 'asked': set()}
+            'usage': [], 'dollars': None, 'version': None, 'asked': set()}
 
 
 def usage(found, moment, model, effort, tokens, dollars=None):
     """One model response: tokens normalized to TOKENS, dollars only if the harness reported them."""
-    found['usage'].append((moment, tokens, dollars))
-    found['models'].add(f'{model}@{effort}' if effort else model)
+    found['usage'].append((moment, tokens, dollars, f'{model}@{effort}' if effort and model else model))
 
 
 def asks(text):
@@ -108,19 +107,31 @@ def read_claude(entries, sid):
     return found
 
 
+def codex_tokens(spent):
+    return {'input': spent.get('input_tokens', 0), 'output': spent.get('output_tokens', 0),
+            'cache_read': spent.get('cached_input_tokens', 0), 'cache_write': spent.get('cache_write_input_tokens', 0),
+            'reasoning': spent.get('reasoning_output_tokens', 0)}
+
+
 def read_codex(entries, sid):
     found = session('codex', sid)
     model = effort = None
+    counted, previous = [], dict.fromkeys(TOKENS, 0)
     for entry in entries:
         payload = entry.get('payload') or {}
+        if entry['type'] == 'event_msg' and payload.get('type') == 'token_count' and payload.get('info'):
+            # Codex CLI rollouts carry only a running total; each event's share is the growth since the last one.
+            total = codex_tokens(payload['info'].get('total_token_usage') or {})
+            if total != previous:
+                counted.append((instant(entry['timestamp']), model, effort,
+                                {name: max(total[name] - previous[name], 0) for name in TOKENS}))
+                previous = total
+        if entry['type'] == 'event_msg' and payload.get('type') == 'request_user_input':
+            found['asked'].add(instant(entry['timestamp']))
         if entry['type'] == 'turn_context':
             model, effort = payload.get('model'), payload.get('effort')
         elif entry['type'] == 'token_usage_record':
-            spent = payload['usage']
-            usage(found, when(entry['timestamp']), model, effort, {
-                'input': spent.get('input_tokens', 0), 'output': spent.get('output_tokens', 0),
-                'cache_read': spent.get('cached_input_tokens', 0), 'cache_write': spent.get('cache_write_input_tokens', 0),
-                'reasoning': spent.get('reasoning_output_tokens', 0)})
+            usage(found, instant(entry['timestamp']), model, effort, codex_tokens(payload['usage']))
         elif entry['type'] == 'session_meta':
             found['id'] = payload.get('id', sid)
             found['version'] = payload.get('cli_version')
@@ -145,6 +156,9 @@ def read_codex(entries, sid):
                     evidence(found, text)
                     if asks(text):
                         found['asked'].add(when(entry['timestamp']))
+    if not found['usage']:  # no per-response records: fall back to the running totals
+        for moment, used_model, used_effort, tokens in counted:
+            usage(found, moment, used_model, used_effort, tokens)
     return found
 
 
@@ -233,7 +247,8 @@ def link(found, rows, by_id):
                    and (not found['repo'] or row['vcs'].get('vcs.repository.name') == found['repo'])]
         if len({rows[change]['vcs'].get('vcs.repository.name') for change in matches}) > 1:
             continue  # the same branch name in several repositories: ambiguous without the session's repository
-        times = [t for t in found['humans'] + found['activity'] if branch_at(found, t) == branch]
+        times = [t for t in found['humans'] + found['activity'] + [u[0] for u in found['usage']]
+                 if branch_at(found, t) == branch]
         if not times:
             continue
         first, last = min(times).timestamp(), max(times).timestamp()
@@ -311,8 +326,8 @@ def costs(everyone, rows):
     responses by token weight. Codex reports no dollars, so its share stays unknown."""
     totals = {}
     for found in everyone:
-        weights = [tokens['input'] + tokens['output'] for _, tokens, _ in found['usage']]
-        for (moment, tokens, dollars), weight in zip(found['usage'], weights):
+        weights = [tokens['input'] + tokens['output'] for _, tokens, _, _ in found['usage']]
+        for (moment, tokens, dollars, _), weight in zip(found['usage'], weights):
             if found['harness'] == 'claude' and found['dollars'] is not None:
                 dollars = found['dollars'] * weight / (sum(weights) or 1)
             for label, share in (assign(moment.timestamp(), found, rows) or unattributed(moment.timestamp())).items():
@@ -329,15 +344,19 @@ def costs(everyone, rows):
             for label, total in totals.items()}
 
 
-def configs(everyone):
-    """Harness versions and models per change, split by sessions the operator talked to and launched workers."""
+def configs(everyone, rows):
+    """Harness versions and models per change, split by sessions the operator talked to and launched workers.
+    A model counts for a change only where one of its responses was assigned to that change."""
     seen = {}
     for found in everyone:
         role = 'launched' if found['launched'] else 'interactive'
         for change in found['links']:
-            config = seen.setdefault(change, {'harnesses': set(), 'interactive': set(), 'launched': set()})
-            config['harnesses'].add(f"{found['harness']}@{found['version']}")
-            config[role].update(model for model in found['models'] if model)
+            seen.setdefault(change, {'harnesses': set(), 'interactive': set(), 'launched': set()})['harnesses'].add(
+                f"{found['harness']}@{found['version']}")
+        for moment, _, _, model in found['usage']:
+            for change in assign(moment.timestamp(), found, rows) or {}:
+                if model:
+                    seen[change][role].add(model)
     return {change: {'harnesses': sorted(config['harnesses']),
                      'models_seen': {'interactive': sorted(config['interactive']), 'launched': sorted(config['launched'])},
                      'config_mixed': len({m.split('@')[0] for m in config['interactive'] | config['launched']}) > 1}
@@ -394,22 +413,24 @@ def sweep(ledger_path, claude=DEFAULT_DIRS['claude'], codex=DEFAULT_DIRS['codex'
                 touch = 'post_merge' if merged and human > merged else kind
                 touches[label] = touches.get(label, 0) + weight
                 counts = phases.setdefault(label, {})
-                counts[touch] = round(counts.get(touch, 0) + weight, 2)
+                counts[touch] = counts.get(touch, 0) + weight
     for found in everyone:
         for change, how in found['links'].items():
             members.setdefault(change, []).append({'harness': found['harness'], 'id': found['id'], 'link': how,
                                                    'role': 'launched' if found['launched'] else 'interactive'})
-    spent, setups = costs(everyone, rows), configs(everyone)
+    spent, setups = costs(everyone, rows), configs(everyone, rows)
 
     operator = {}
     for label in set(touches) | set(minutes[CAPS[0]]):
         numbers = {'minutes': {f'c{cap}': round(minutes[cap].get(label, 0) / 60, 2) for cap in CAPS},
                    'minutes_by_week': by_week.get(label, {}), 'touches': round(touches.get(label, 0), 2)}
         operator[label] = {'unattributed': numbers} if label.startswith('~') else {'operator': {
-            **numbers, 'phases': phases.get(label, {}), 'method': 'gap-cap',
+            **numbers, 'phases': {name: round(value, 2) for name, value in phases.get(label, {}).items()},
+            'method': 'gap-cap',
             'sessions': sorted(members.get(label, []), key=lambda s: (s['harness'], s['id']))}}
-    money = {label: {'unattributed_cost': value} if label.startswith('~') else {'cost': value, 'config': setups.get(label)}
-             for label, value in spent.items()}
+    money = {label: {'unattributed_cost': spent[label]} if label.startswith('~')
+             else {'cost': spent.get(label), 'config': setups.get(label)}
+             for label in set(spent) | set(setups)}
     added = write_rows(ledger_path, existing, 'operator', operator) + write_rows(ledger_path, existing, 'cost', money)
     return {'sessions': len(talked), 'workers': len(everyone) - len(talked),
             'linked': sum(bool(f['links']) for f in everyone), 'skipped': skipped, 'added': added}

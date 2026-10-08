@@ -223,6 +223,22 @@ class SessionsTest(unittest.TestCase):
         self.assertTrue(row['config']['config_mixed'])
         self.assertEqual(row['config']['harnesses'], ['claude@2.1.0', 'codex@0.9'])
 
+    def test_codex_cli_running_totals_count_when_no_usage_records(self):
+        entries = [{'timestamp': at(0), 'type': 'session_meta', 'payload': {
+            'id': 'cli', 'originator': 'codex_exec', 'source': 'exec', 'cli_version': '0.144',
+            'git': {'branch': 'tink/feature', 'repository_url': 'https://github.com/o/r.git'}}},
+            {'timestamp': at(0), 'type': 'turn_context', 'payload': {'model': 'gpt-z', 'effort': 'high'}}]
+        for minute, total in ((1, 50), (2, 50), (3, 120)):  # a repeated total adds nothing
+            entries.append({'timestamp': at(minute), 'type': 'event_msg', 'payload': {'type': 'token_count', 'info': {
+                'total_token_usage': {'input_tokens': total, 'output_tokens': total // 10, 'cached_input_tokens': 0,
+                                      'cache_write_input_tokens': 0, 'reasoning_output_tokens': 0}}}})
+        write(self.codex / '2026' / '10' / '07' / 'rollout-cli.jsonl', entries)
+        self.run_sweep()
+        row = self.rows()['o/r#1']
+        self.assertEqual(row['cost']['gen_ai.usage.input_tokens'], 120)
+        self.assertEqual(row['cost']['gen_ai.usage.output_tokens'], 12)
+        self.assertEqual(row['config']['models_seen']['launched'], ['gpt-z@high'])
+
     def test_codex_child_agent_cost_follows_its_parent(self):
         codex_session(self.codex, 'parent', 'tink/feature')
         codex_session(self.codex, 'child', 'main', source={'subagent': {'thread_spawn': {'parent_thread_id': 'parent'}}},

@@ -226,7 +226,9 @@ def attention_view(merged):
         for name, count in ((row.get('operator') or {}).get('phases') or {}).items():
             phases[name] = phases.get(name, 0) + count
     total = sum(phases.values())
-    split = '  '.join(f'{name} {100 * count / total:.0f}%' for name, count in sorted(phases.items())) if total else '—'
+    touched = sum(bool((row.get('operator') or {}).get('phases')) for row in merged)
+    split = ('  '.join(f'{name} {100 * count / total:.0f}%' for name, count in sorted(phases.items()))
+             if total and touched >= MIN_CELL else '—')
     sized = [row['size'] for row in merged if row.get('size')]
     product = sum(s['product_add'] + s['product_del'] for s in sized)
     process = sum(s['process_lines'] for s in sized)
@@ -235,7 +237,8 @@ def attention_view(merged):
     tokens = [row['cost']['gen_ai.usage.output_tokens'] for row in merged if row.get('cost')]
     return ['View 2: where attention goes',
             f'  touches by kind: {split}',
-            f'  process lines per product line {process / product:.2f}' if product else '  process lines per product line —',
+            f'  process lines per product line {process / product:.2f}' if product and len(sized) >= MIN_CELL
+            else '  process lines per product line —',
             f'  median reported $ per change {cell(priced, lambda v: f"{statistics.median(v):.2f}")} (n={len(priced)})',
             f'  median output tokens per change {cell(tokens, lambda v: f"{statistics.median(v):.0f}")} (n={len(tokens)})']
 
