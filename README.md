@@ -142,6 +142,13 @@ own steering, or after the merge.
 
 Rows go to `~/.local/share/tink-substrate/ledger/changes.jsonl` and hold no prompt text.
 
+## One view of the selected change
+
+`python3 -m tink_substrate surface --json` prints one read-only JSON for the selected change. It covers what the change
+is, its workflow and PR state, what needs you (consequential items only), and its ledger row and this week's numbers.
+Human surfaces such as Tinkery render it, and agents can read it to answer "what happened?". See
+[docs/surface.md](docs/surface.md).
+
 ## For contributors
 
 Running from its checkout needs no package installation. To install a reviewed
