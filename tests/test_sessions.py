@@ -9,6 +9,10 @@ Ways this could fail, written before the code:
 6. Prompt text leaks into the ledger.
 7. Re-running adds duplicate lines.
 8. A transcript format change crashes the sweep instead of being skipped and counted.
+9. Streamed Claude messages repeat their usage on every line, so tokens are counted several times.
+10. Worker sessions with no human (exec, launched, child agents) are left out of a change's cost.
+11. Dollars are invented for a harness that does not report them.
+12. A follow-up prompt the agent asked for is counted as the operator steering.
 """
 from datetime import datetime, timedelta, timezone
 import json
@@ -39,6 +43,29 @@ def claude_human(minute, text=SECRET, branch='tink/feature'):
 def claude_agent(minute):
     return {'type': 'assistant', 'timestamp': at(minute), 'message': {'role': 'assistant',
             'content': [{'type': 'text', 'text': 'done'}]}}
+
+
+def claude_usage(minute, message, text='done', model='claude-x'):
+    return {'type': 'assistant', 'timestamp': at(minute), 'version': '2.1.0', 'message': {
+        'id': message, 'role': 'assistant', 'model': model, 'content': [{'type': 'text', 'text': text}],
+        'usage': {'input_tokens': 10, 'cache_read_input_tokens': 90, 'cache_creation_input_tokens': 0,
+                  'output_tokens': 5, 'output_tokens_details': {'thinking_tokens': 2}}}}
+
+
+def codex_session(root, name, branch, source='vscode', originator='Codex Desktop', humans=(0, 6), model='gpt-x'):
+    entries = [{'timestamp': at(0), 'type': 'session_meta', 'payload': {
+        'id': name, 'cwd': '/w', 'originator': originator, 'source': source, 'cli_version': '0.9',
+        'git': {'branch': branch, 'repository_url': 'https://github.com/o/r.git'}}},
+        {'timestamp': at(0), 'type': 'turn_context', 'payload': {'model': model, 'effort': 'low'}}]
+    for minute in humans:
+        entries.append({'timestamp': at(minute), 'type': 'event_msg', 'payload': {
+            'type': 'item_completed', 'item': {'type': 'UserMessage', 'content': [{'type': 'text', 'text': SECRET}]}}})
+        entries.append({'timestamp': at(minute + 2), 'type': 'event_msg', 'payload': {
+            'type': 'item_completed', 'item': {'type': 'AgentMessage', 'content': [{'type': 'text', 'text': 'ok'}]}}})
+    entries.append({'timestamp': at(3), 'type': 'token_usage_record', 'payload': {'usage': {
+        'input_tokens': 100, 'cached_input_tokens': 60, 'cache_write_input_tokens': 0, 'output_tokens': 7,
+        'reasoning_output_tokens': 3}}})
+    write(root / '2026' / '10' / '07' / f'rollout-{name}.jsonl', entries)
 
 
 class SessionsTest(unittest.TestCase):
@@ -89,7 +116,7 @@ class SessionsTest(unittest.TestCase):
         operator = self.rows()['o/r#1']['operator']
         self.assertEqual(operator['touches'], 3)
         self.assertEqual(operator['minutes'], {'c2': 4.0, 'c5': 7.0, 'c10': 12.0})
-        self.assertEqual(operator['sessions'], [{'harness': 'claude', 'id': 's', 'link': 'branch'}])
+        self.assertEqual(operator['sessions'], [{'harness': 'claude', 'id': 's', 'link': 'branch', 'role': 'interactive'}])
 
     def test_parallel_sessions_split_overlapping_minutes(self):
         write(self.claude / 'p' / 'a.jsonl', [claude_human(0), claude_agent(1), claude_human(5)])
@@ -123,6 +150,8 @@ class SessionsTest(unittest.TestCase):
         self.assertIn('operator h', out)
         self.assertIn('unattributed', out)
         self.assertIn('with operator data 1/3', out)
+        self.assertIn('View 2', out)
+        self.assertIn('touches by kind:', out)
 
     def test_codex_reads_user_messages_and_skips_exec_and_subagents(self):
         def codex(name, source, originator, branch):
@@ -155,7 +184,8 @@ class SessionsTest(unittest.TestCase):
         operator = self.rows()['o/r#3']['operator']
         self.assertEqual(operator['touches'], 2)
         self.assertEqual(operator['minutes']['c5'], 3.0)
-        self.assertEqual(operator['sessions'], [{'harness': 'pi', 'id': 'talk', 'link': 'text'}])
+        self.assertEqual(operator['sessions'], [{'harness': 'pi', 'id': 'launch', 'link': 'text', 'role': 'launched'},
+                                                {'harness': 'pi', 'id': 'talk', 'link': 'text', 'role': 'interactive'}])
 
     def test_unlinked_time_is_unattributed_and_unknown_is_not_zero(self):
         write(self.claude / 'p' / 's.jsonl', [claude_human(0, branch='main'), claude_agent(1),
@@ -174,6 +204,41 @@ class SessionsTest(unittest.TestCase):
         write(path, [claude_human(0, branch='main'), claude_agent(1), claude_human(4, branch='main')])
         self.run_sweep()
         self.assertIsNone(self.rows()['o/r#1']['operator'])
+
+    def test_cost_dedupes_streamed_usage_and_takes_dollars_only_from_the_harness(self):
+        write(self.claude / 'p' / 's.jsonl', [
+            claude_human(0), claude_usage(1, 'm1'), claude_usage(1, 'm1'), claude_usage(2, 'm2'), claude_human(4),
+            {'type': 'cost-state', 'totalCostUSD': 1.0}, {'type': 'cost-state', 'totalCostUSD': 2.5}])
+        codex_session(self.codex, 'worker', 'tink/feature', source='exec', originator='codex_exec', humans=(0,))
+        self.run_sweep()
+        row = self.rows()['o/r#1']
+        cost = row['cost']
+        self.assertEqual(cost['gen_ai.usage.input_tokens'], 300)  # 2 Claude messages x 100, plus Codex 100
+        self.assertEqual(cost['gen_ai.usage.output_tokens'], 17)
+        self.assertEqual(cost['gen_ai.usage.cache_read.input_tokens'], 240)
+        self.assertEqual(cost['gen_ai.usage.reasoning.output_tokens'], 7)
+        self.assertEqual(cost['llm.cost.total'], 2.5)  # Claude's own total; Codex reports no dollars
+        self.assertLess(cost['cost_known_share'], 1)
+        self.assertEqual(row['config']['models_seen'], {'interactive': ['claude-x'], 'launched': ['gpt-x@low']})
+        self.assertTrue(row['config']['config_mixed'])
+        self.assertEqual(row['config']['harnesses'], ['claude@2.1.0', 'codex@0.9'])
+
+    def test_codex_child_agent_cost_follows_its_parent(self):
+        codex_session(self.codex, 'parent', 'tink/feature')
+        codex_session(self.codex, 'child', 'main', source={'subagent': {'thread_spawn': {'parent_thread_id': 'parent'}}},
+                      humans=(1,), model='gpt-mini')
+        self.run_sweep()
+        cost = self.rows()['o/r#1']['cost']
+        self.assertEqual(cost['gen_ai.usage.input_tokens'], 200)
+        self.assertIsNone(cost['llm.cost.total'])
+
+    def test_touch_phases(self):
+        write(self.claude / 'p' / 's.jsonl', [
+            claude_human(0), claude_usage(1, 'a', 'Which file should I change?'), claude_human(3),
+            claude_usage(4, 'b'), claude_human(6), claude_usage(7, 'c'), claude_human(400)])
+        self.run_sweep()
+        self.assertEqual(self.rows()['o/r#1']['operator']['phases'],
+                         {'intake': 1, 'agent_asked': 1, 'steered': 1, 'post_merge': 1})
 
     def test_no_prompt_text_and_rerun_is_idempotent(self):
         write(self.claude / 'p' / 's.jsonl', [claude_human(0), claude_agent(1), claude_human(4)])
