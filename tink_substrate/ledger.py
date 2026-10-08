@@ -127,7 +127,9 @@ def observe(repo, clone, prs, comments_for, commits_for, earlier=None, since=Non
         change = f'{repo}#{pr["number"]}'
         key = [change, 'backfill', 'gh', pr['number']]
         known = earlier.get(json.dumps(key))
-        if known and since and pr.get('updatedAt') and when(pr['updatedAt']) < since:
+        # A merged PR measured before the clone had its commit stays fresh until the clone catches up.
+        unmeasured = known and pr.get('mergedAt') and known.get('size') is None
+        if known and since and not unmeasured and pr.get('updatedAt') and when(pr['updatedAt']) < since:
             fields = {**known, 'outcome': {**known['outcome'], 'reverted_by': reverts.get(pr['number'])}}
             yield {'schema': 1, 'key': key, 'change': change, 'phase': 'backfill',
                    'at': pr.get('closedAt') or pr['createdAt'], 'by': f'sweep@{__version__}', 'fields': fields}

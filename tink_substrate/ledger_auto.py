@@ -6,6 +6,7 @@ transcript (harnesses delete old ones), sweeps GitHub for what changed since the
 """
 
 from datetime import datetime, timedelta, timezone
+import fcntl
 import gzip
 import json
 import os
@@ -76,6 +77,15 @@ def update(config=DEFAULT_CONFIG, home=DEFAULT_HOME, live=None):
     """Mirror transcripts, sweep GitHub incrementally, re-read sessions. Each step reports on its own."""
     repos = read_config(config)
     home = private_dir(Path(home))
+    with open(home / 'update.lock', 'a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Another ledger update is running') from None
+        return locked_update(repos, home, live)
+
+
+def locked_update(repos, home, live):
     live = live or sessions.DEFAULT_DIRS
     ledger_path = home / 'changes.jsonl'
     state_path = home / 'state.json'
@@ -118,7 +128,7 @@ def launchctl(argv):
 def schedule(agents=HOME / 'Library/LaunchAgents', package=None, python=None, hour=6, home=DEFAULT_HOME,
              run=launchctl):
     """Install (or replace) a LaunchAgent that runs `ledger update` daily from the installed package."""
-    package = Path(package or Path(__file__).resolve().parents[1])
+    package = Path(package or Path(__file__).parents[1]).expanduser().resolve()  # launchd has no current directory
     if not (package / 'tink_substrate').is_dir():
         raise ValueError(f'{package} does not contain the tink_substrate package; pass the installed skill directory')
     agents = Path(agents)

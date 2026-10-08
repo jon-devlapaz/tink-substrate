@@ -92,10 +92,19 @@ class LedgerAutoTest(unittest.TestCase):
                                     run=lambda argv: commands.append(argv))
         plist = plistlib.loads(path.read_bytes())
         self.assertEqual(plist['ProgramArguments'], ['/usr/bin/python3', '-B', '-m', 'tink_substrate', 'ledger', 'update'])
-        self.assertEqual(plist['WorkingDirectory'], str(package))
+        self.assertEqual(plist['WorkingDirectory'], str(package.resolve()))
         self.assertEqual(plist['StartCalendarInterval'], {'Hour': 6, 'Minute': 0})
         self.assertIn('/opt/homebrew/bin', plist['EnvironmentVariables']['PATH'])
         self.assertEqual(commands[-1][:2], ['launchctl', 'bootstrap'])
+
+    def test_a_second_update_while_one_runs_is_refused(self):
+        self.write_config({'o/r': str(self.root)})
+        import fcntl
+        self.home.mkdir(parents=True)
+        with open(self.home / 'update.lock', 'a') as held:
+            fcntl.flock(held, fcntl.LOCK_EX)
+            with self.assertRaisesRegex(ValueError, 'running'):
+                ledger_auto.update(self.config, self.home, live=self.live)
 
     def test_schedule_refuses_a_directory_without_the_package(self):
         with self.assertRaisesRegex(ValueError, 'tink_substrate'):

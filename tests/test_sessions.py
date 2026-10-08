@@ -93,7 +93,8 @@ class SessionsTest(unittest.TestCase):
                                           'review': {'rounds': 0, 'p1': 0}}}) + '\n')
 
     def run_sweep(self):
-        return sessions.sweep(self.ledger, claude=self.claude, codex=self.codex, pi=self.pi, snapshots=None)
+        return sessions.sweep(self.ledger, claude=self.claude, codex=self.codex, pi=self.pi, snapshots=None,
+                              mirror=None)
 
     def rows(self):
         return ledger.fold(ledger.read(self.ledger))

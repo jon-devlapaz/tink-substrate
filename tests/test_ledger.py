@@ -181,6 +181,15 @@ class LedgerTest(unittest.TestCase):
         self.assertEqual(rows['o/r#1']['outcome']['reverted_by'], 'o/r#2')
         self.assertEqual(rows['o/r#1']['size']['product_add'], 10)  # carried over, not lost
 
+    def test_incremental_sweep_retries_a_size_the_clone_did_not_have(self):
+        for pr in self.prs:
+            pr['updatedAt'] = pr['closedAt']
+        ledger.sweep(self.ledger, [('o/r', self.repo)])
+        self.assertIsNone(self.rows()['o/r#2']['size'])
+        self.viewed.clear()
+        ledger.sweep(self.ledger, [('o/r', self.repo)], since={'o/r': datetime(2026, 10, 9, tzinfo=timezone.utc)})
+        self.assertEqual(self.viewed, [2])  # still unmeasured, so asked again; measured PRs are not
+
     def test_missing_merge_commit_records_unknown_size(self):
         self.sweep()
         self.assertIsNone(self.rows()['o/r#2']['size'])
